@@ -1,6 +1,6 @@
  <?php
 
-require '../../../vendor/autoload.php';
+require '../vendor/autoload.php';
 
 //Ajax Librairy ----
 // Get the core singleton object

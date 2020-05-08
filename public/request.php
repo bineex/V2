@@ -1,6 +1,6 @@
  <?php
 
-require '../../../vendor/autoload.php';
+require '../vendor/autoload.php';
 
 require_once '../init.php';
 require_once("../includes/fct_freshdesk.php");

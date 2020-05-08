@@ -7,7 +7,7 @@ chdir(dirname(__FILE__));
 $_SERVER['HTTP_HOST'] = '';
 $NOSESSION = 1;
 
-require_once ('../../../vendor/autoload.php');
+require_once ('../vendor/autoload.php');
 require_once ('../init.php');
 
 use PHPMailer\PHPMailer\PHPMailer;

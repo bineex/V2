@@ -4,7 +4,7 @@
     header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept');
     header('Access-Control-Allow-Methods: GET, POST, PUT');
 */
-require '../../../vendor/autoload.php';
+require '../vendor/autoload.php';
 require_once '../init.php';
 
 require_once("../includes/class_knack.php");

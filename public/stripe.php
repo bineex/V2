@@ -8,7 +8,7 @@ error_reporting(E_ALL);
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-require '../../../vendor/autoload.php';
+require '../vendor/autoload.php';
 require_once '../init.php';
 require_once '../includes/header.php';
 //<script src="stripe/script.js" defer></script>

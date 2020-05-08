@@ -1,5 +1,5 @@
 <?php
-require '../../../vendor/autoload.php';
+require '../vendor/autoload.php';
 require_once '../init.php';
 $db = DB::getInstance();
 

@@ -77,7 +77,7 @@ if($user->isLoggedIn() && $currentPage != 'user_settings.php' && $user->data()->
 
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <?php echo $script_analytics ?>
@@ -86,14 +86,29 @@ if($user->isLoggedIn() && $currentPage != 'user_settings.php' && $user->data()->
     <meta charset="utf-8">
     <title>Your Concierge</title>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="description" content="">
-    <meta name="author" content="">
+    <meta name="description" content="コンシェルジュが企業に常駐し、ワーカーのプライベート充実のためのサポートを行う、日本初の「コーポレート・コンシェルジュ」サービスを提供しています。YourConcierge for New Happiness">
+	<meta name="keywords" content="TPO,corporate concierge,コーポレートコンシェルジュ,マニヤン麻里子">
+
+	<!-- facebook -->
+	<meta property="og:title" content="YourConcierge for New Happiness">
+	<meta property="og:site_name" content="">
+	<meta property="og:description" content="コンシェルジュが企業に常駐し、ワーカーのプライベート充実のためのサポートを行う、日本初の「コーポレート・コンシェルジュ」サービスを提供しています。YourConcierge for New Happiness">
+	<meta property="og:url" content="https://myaccount.yourconcierge.jp">
+	<meta property="og:image" content="https://myaccount.yourconcierge.jp/images/info/info1.jpg">
+	<meta property="og:type" content="website">
+	<!-- twitter -->
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="twitter:title" content="YourConcierge for New Happiness">
+	<meta name="twitter:description" content="コンシェルジュが企業に常駐し、ワーカーのプライベート充実のためのサポートを行う、日本初の「コーポレート・コンシェルジュ」サービスを提供しています。YourConcierge for New Happiness">
+	<meta name="twitter:image" content="https://myaccount.yourconcierge.jp/images/info/info1.jpg">
     <!-- mobile settings -->
     <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1, user-scalable=0" />
+	<meta name="mobile-web-app-capable" content="yes">
     <!--[if IE]><meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'><![endif]-->
 
     <!-- WEB FONTS : use %7C instead of | (pipe) -->
         <link href="https://fonts.googleapis.com/earlyaccess/notosansjapanese.css" rel="stylesheet" type="text/css" />
+		
 
         <!-- CORE CSS -->
         <link href="assets/plugins/bootstrap/css/bootstrap.css" rel="stylesheet" type="text/css" />
@@ -106,6 +121,9 @@ if($user->isLoggedIn() && $currentPage != 'user_settings.php' && $user->data()->
         <link href="assets/css/header-1.css?2" rel="stylesheet" type="text/css" />
         <link href="assets/css/color_scheme/<?php echo $theme_color ?>.css?4" rel="stylesheet" type="text/css" id="color_scheme" />
         <link href="assets/css/layout-datatables.css" rel="stylesheet" type="text/css" />
+
+		<!-- SWIPER SLIDER -->
+		<link href="assets/plugins/slider.swiper/dist/css/swiper.min.css" rel="stylesheet" type="text/css" />
         
         
 </head>

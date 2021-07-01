@@ -13,6 +13,8 @@ require_once '../init.php';
 require_once("../includes/fct_freshdesk.php");
 require_once("../includes/fct_account.php");
 require_once("../includes/fct_display.php");
+
+
 $jaxon->processRequest();// Call the Jaxon processing engine
 
 require_once '../includes/header.php';
@@ -46,7 +48,15 @@ else {
     $_SESSION['goto'] = $_SERVER['REQUEST_URI'];
     Redirect::to('login.php');
 }
+
+
+
+//<script src="https://js.stripe.com/v3/"></script>
+//<script src="stripe/stripe_script_payment.js" defer></script>
 ?>
+
+
+
 <script>
     function get_editordata() {
         $("#btnJoin").attr("disabled", true);
@@ -57,7 +67,6 @@ else {
 <div id="wrapper">
     <?php echo display_navbar_short($Logged); ?>
 
-    
 <?php 
     if(isset($_GET['u']) && !empty($_GET['u'])){
         $event_id = $_GET['u'];
@@ -65,8 +74,9 @@ else {
         echo displayEvent($event_id);
     }else{
         Redirect::to('index.php');
-    }  
+    }
 ?>
+
 <!-- Modal start -->
         <?php echo displayModal(); ?>
         <?php echo displayModalJoin(); ?>
@@ -75,11 +85,31 @@ else {
 <?php require_once '../includes/footer.php';  ?>
 
 </div>
-    <?php
-        $jaxon = jaxon();
-        echo $jaxon->getJs();
-        echo $jaxon->getScript();
+<?php
+    $jaxon = jaxon();
+    echo $jaxon->getJs();
+    echo $jaxon->getScript();
+
+    if(isset($_GET['session_id']) && !empty($_GET['session_id'])){
+        require 'stripe/config.php';
+        \Stripe\Stripe::setApiKey($confStripe['stripe_secret_key']);
+        
+        $session_id = $_GET['session_id'];
+        $checkout_session = \Stripe\Checkout\Session::retrieve($session_id);
+        $payment_intent = $checkout_session->payment_intent;
+        $client_reference_id = $checkout_session->client_reference_id;
+        $schedule_id = $_GET['sch'];
+        ?>
+        <script type="text/javascript">window.jaxon_checkPayment("<?php echo $schedule_id.'","'.$client_reference_id.'","'.$payment_intent; ?>");</script>
+<?php } 
+
+if(isset($_GET['sub_id']) && !empty($_GET['sub_id'])){
+
     ?>
+        <script type="text/javascript">window.jaxon_registerSubscriptionResult("<?php echo $_GET['sub_id']; ?>");</script>
+<?php } 
+
+?>
 
     <script>
     $(function(){

@@ -24,7 +24,103 @@ $jaxon->register(Jaxon::USER_FUNCTION, 'editFormSchedule');
 $jaxon->register(Jaxon::USER_FUNCTION, 'editSchedulebyID');
 $jaxon->register(Jaxon::USER_FUNCTION, 'checkEventAvailability');
 $jaxon->register(Jaxon::USER_FUNCTION, 'displayModalAddUser');
+$jaxon->register(Jaxon::USER_FUNCTION, 'checkPayment');
+$jaxon->register(Jaxon::USER_FUNCTION, 'displayEventDescription');
+
+function checkPayment($schedule_id,$client_reference_id,$payment_intent_id){
+    Global $lang;Global $user;
+
+    require 'stripe/config.php';
+    $response = new Response();
+
+    $user_id=$user->data()->fd_id;
+    $codeLang = $_SESSION['lang']['code'];
+
+    $scheduleDetail = getScheduleDetail($schedule_id);
+    $detail = $scheduleDetail[0];
+
+    $isAvailable  = checkEventAvailability($schedule_id,$user_id);
+    
+    if(!$isAvailable){
+        $response->alert($lang['EVENT_AVAILABILITY']);
+        //$response->alert($isAvailable);
+        $response->redirect('event.php?u='.$detail->id_event);
+        return $response;
+    }
+
+    \Stripe\Stripe::setApiKey($confStripe['stripe_secret_key']);
+    $payment_intent = \Stripe\PaymentIntent::retrieve($payment_intent_id);
+    $payment = $payment_intent->capture();
+
+    if ($payment->status != "succeeded"){
+        $response->alert($lang['STH_WENT_WRONG']);
+        $response->redirect('event.php?u='.$detail->id_event);
+        return $response;
+    }
+    
+    $markup = "";
+    $cf_category_level_1 = 'PENDING';
+    $cf_category_level_event = 'Connect';
+    $cf_sub_category = 'TPO Event';
+    
+    $descEvent = getEventDesc($detail->id_event);    
+    if ($descEvent){
+        $markup = ($codeLang == 'en' ? $descEvent->response_en : $descEvent->response_jp);
+        $cf_category_level_1 = $descEvent->category_level_1;
+        $cf_category_level_event = $descEvent->category_level_event;
+        $cf_sub_category = $descEvent->sub_category;
+    }
+    
+    $due_by = convert_JPtoGMT($detail->date_start."T".$detail->time_start.":00");
+    
+    $description = $detail->title . ": ". $detail->date_start ." ". $detail->time_start;
+    $description .= '<br><br>' . $markup;
+    
+    $ticket = array(
+                'subject' => $detail->title . ": ". $detail->date_start ." ". $detail->time_start,
+                'description' => $description,
+                'requester_id' => intval($user_id),
+                'source' => 2,
+                'status' => 2,
+                'priority' => 1,
+                'due_by' => $due_by,
+		'cf_category_level_1' => $cf_category_level_1,
+                'cf_category_level_event' => $cf_category_level_event,
+		'cf_sub_category' => $cf_sub_category,
+                'cf_travel_required' => 'No',
+                'cf_type_of_request' => 'No',
+                'cf_request_source' => 'Chatbot（オンライン）',
+                'payment_intent' => $payment->id);
+    
+    $json_ticket = json_encode($ticket);
+    $result = createAttendees($schedule_id,$user_id,1,$ticket);
+    
+    If ($result){
+        $response->alert($lang['EVENT_SUBSCRIBE_OK']);
+    } 
+    else{
+        $response->alert($lang['STH_WENT_WRONG']);
+    }
+
+    $response->assign('small-modal-content', 'innerHTML', '');
+    $response->assign('myModal', 'style.display', 'none');
+    
+    $response->redirect('index.php#event');
+    return $response;
+}
+function refundPayment($payment_intent_id){
+    Global $company;
  
+    $confStripe = $company['stripe'];
+
+    \Stripe\Stripe::setApiKey($confStripe['stripe_secret_key']);
+    $refund = \Stripe\Refund::create([
+        'payment_intent' => $payment_intent_id,
+      ]);
+
+    return ($refund->status == "succeeded" ? TRUE : FALSE);
+
+}
 function addSchedule($valuesForm){
     $db = DB::getInstance();
     
@@ -53,13 +149,15 @@ function addEventDesc($valuesForm){
     
     $id_event = $valuesForm['id_event_desc'];   
     $editordata_en = $valuesForm['editordata_en'];
+    //$editordata_en = Input::sanitize($valuesForm['editordata_en']);
     $editordata_jp = $valuesForm['editordata_jp'];
     $cf_category_level_1 = $valuesForm['category_level_1'];
     $cf_category_level_event = $valuesForm['category_level_event'];
     $sub_category = $valuesForm['sub_category'];
+    $amount = $valuesForm['amount'];
     
     $query = $db->insert("event",
-                ['id_event'=>$id_event, 'response_en'=>$editordata_en,'response_jp'=>$editordata_jp,'category_level_1'=>$cf_category_level_1,'category_level_event'=>$cf_category_level_event,'sub_category'=>$sub_category],TRUE);
+                ['id_event'=>$id_event, 'response_en'=>$editordata_en,'response_jp'=>$editordata_jp,'category_level_1'=>$cf_category_level_1,'category_level_event'=>$cf_category_level_event,'sub_category'=>$sub_category,'amount'=>$amount],TRUE);
     
     $response = new Response();
     $script="jaxon_displayEventsList();jaxon_displayEventSchedule('$id_event');";
@@ -67,7 +165,6 @@ function addEventDesc($valuesForm){
     $response->script($script);
     return $response;
 }
-
 function addAttendees_prepend($data){
     Global $user; Global $lang;
     $response = new Response();    
@@ -127,8 +224,7 @@ function addAttendees_prepend($data){
     return $response;
     
 }
-
-function addAttendees($data){
+function addAttendees($data,$direct = FALSE){
     Global $user; Global $lang;
     $response = new Response();
     
@@ -136,7 +232,6 @@ function addAttendees($data){
     $codeLang = $_SESSION['lang']['code'];
     
     $schedule_id = intval($data['schedule_id']);
-    //$comment = trim($data['comment']);
 
     $isAvailable  = checkEventAvailability($schedule_id);
     
@@ -174,31 +269,44 @@ function addAttendees($data){
                 'status' => 2,
                 'priority' => 1,
                 'due_by' => $due_by,
-		'cf_category_level_1' => $cf_category_level_1,
+		        'cf_category_level_1' => $cf_category_level_1,
                 'cf_category_level_event' => $cf_category_level_event,
-		'cf_sub_category' => $cf_sub_category,
+		        'cf_sub_category' => $cf_sub_category,
                 'cf_travel_required' => 'No',
                 'cf_type_of_request' => 'No',
                 'cf_request_source' => 'Chatbot（オンライン）');
     
     $json_ticket = json_encode($ticket);
-    $result = createAttendees($schedule_id,$user_id,1,$ticket);
 
-    
-    If ($result){
-        $response->alert($lang['EVENT_SUBSCRIBE_OK']);
-    } 
-    else{
-        $response->alert($lang['STH_WENT_WRONG']);
+    if ($direct){
+        if (!isScheduleBooked($schedule_id,$user_id)){
+            $result = createAttendees($schedule_id,$user_id,1,$ticket); 
+        }
+        $submitButton = '<button type="button" class="btn btn-primary" data-dismiss="modal">'.$lang['MODAL_CLOSE'].'</button>';
+        $response->assign('small-modalEvent-content', 'innerHTML', $description);
+        $response->assign('modalEvent-footer', 'innerHTML', $submitButton);
+        $response->script('$("#myModalEventLabel").html("'.$detail->title.'");$("#myModalEvent").modal({"show":true});');
+        
+        return $response;
     }
+    else{
+        $result = createAttendees($schedule_id,$user_id,1,$ticket);
 
-    $response->assign('small-modal-content', 'innerHTML', '');
-    $response->assign('myModal', 'style.display', 'none');
-    
-    $response->redirect('index.php#event');
-    return $response;
+        
+        If ($result){
+            $response->alert($lang['EVENT_SUBSCRIBE_OK']);
+        } 
+        else{
+            $response->alert($lang['STH_WENT_WRONG']);
+        }
+
+        $response->assign('small-modal-content', 'innerHTML', '');
+        $response->assign('myModal', 'style.display', 'none');
+        
+        $response->redirect('index.php#event');
+        return $response;
+    }
 }
-
 function createAttendees($schedule,$user,$qty,$data){  
     $db = DB::getInstance();
     
@@ -218,8 +326,13 @@ function createAttendees($schedule,$user,$qty,$data){
     $customField["cf_type_of_request"] = $data["cf_type_of_request"];
     $customField["cf_request_source"] = $data["cf_request_source"];
     $fields['custom_fields'] = $customField;
+    $log = $fields;
+    $log["description"] = substr($log["description"],0,50);
+
+    $payment_intent = (isset($data["payment_intent"]) ? $data["payment_intent"] : NULL);
+
+    file_put_contents('log/log-ticket_'.date("y-m-d").'.log', "\xEF\xBB\xBF".date('y-m-d H:i:s').' - [REQT:] '. json_encode($log,JSON_UNESCAPED_UNICODE).PHP_EOL, FILE_APPEND);
     
-    file_put_contents('log/log-ticket_'.date("y-m-d").'.log', "\xEF\xBB\xBF".date('y-m-d H:i:s').' - [REQT] '. json_encode($fields,JSON_UNESCAPED_UNICODE).PHP_EOL, FILE_APPEND);
     $freshUsers= new freshdesk();    
     $newTicket = $freshUsers->addTicket($fields);
     
@@ -233,36 +346,35 @@ function createAttendees($schedule,$user,$qty,$data){
         //sendmail('moreno@bineex.com','!! Ticket created !!',json_encode($newTicket));
         
         $sql="INSERT INTO event_attendees 
-         (id_event_schedule, id_user, quantity, id_ticket, created_at) 
-         VALUES ('$schedule', '$user', '$qty','$fd_ticket_id', '$created_at');";
+         (id_event_schedule, id_user, quantity, id_ticket, created_at, payment_intent ) 
+         VALUES ('$schedule', '$user', '$qty','$fd_ticket_id', '$created_at', '$payment_intent')";
     
         $db->query($sql);
-        return $newTicket['id'];
+        return $fd_ticket_id;
     }
     else {
-        sendmail('moreno@bineex.com','!! Ticket Error !!',json_encode($fields));
         return FALSE;
     }
-    return json_encode($newTicket);
 }
-
 function deleteAttendees($schedule,$user){
     Global $lang;
     $db = DB::getInstance();
-    $sql="SELECT id_event_attds, id_ticket FROM event_attendees where deleted_at is null and id_event_schedule = $schedule and id_user = $user";   
+    $sql="SELECT id_event_attds, id_ticket, payment_intent FROM event_attendees where deleted_at is null and id_event_schedule = $schedule and id_user = $user";   
     $db->query($sql);
     
     $result = $db->results();        
     $ticket = $result[0];
     $id_ticket = $ticket->id_ticket;
     $id_event_attds = $ticket->id_event_attds;
-
+    $payment_intent = $ticket->payment_intent;
+    
+    
     $freshUsers= new freshdesk();
-//Add a private note Ticket
+    //Add a private note Ticket
     $note["body"] = "Cancelled by the user";
     $responseTicket = $freshUsers->addNoteTicket($id_ticket,$note);    
     
-//Close Ticket
+    //Close Ticket
     $fields["status"] = 5; //5 => closed    
     $responseTicket = $freshUsers->closeTicket($id_ticket,$fields);
     
@@ -270,6 +382,9 @@ function deleteAttendees($schedule,$user){
             where id_event_attds = $id_event_attds";    
     $db->query($sql);
 
+    if(!empty($payment_intent)){
+        $refund = refundPayment($payment_intent);
+    }
     
     $response = new Response();
     $response->assign('small-modal-content', 'innerHTML', '');
@@ -306,7 +421,6 @@ function deleteAttendeesbyID($id_row){
     $response->redirect('admin.php');
     return $response;
 }
-
 function deleteSchedulebyID($id_schedule,$id_event = null){
     Global $lang; Global $user;
         
@@ -322,7 +436,6 @@ function deleteSchedulebyID($id_schedule,$id_event = null){
     $response->script($script);
     return $response;
 }
-
 function editFormSchedule($id_schedule){
     Global $lang;
             
@@ -383,6 +496,21 @@ function editSchedulebyID($valuesForm){
     $response->script($script);
     return $response;
 }
+function getScheduleDetailImg($id,$code_lang = NULL){
+    $db = DB::getInstance();
+     if ($code_lang == NULL){$code_lang = $_SESSION['lang']['code'];}
+     
+     $sql="SELECT s.id_event,s.id_event_schedule,a.title,s.date_start,TIME_FORMAT(time_start,'%H:%i') as time_start,TIME_FORMAT(time_end,'%H:%i') as time_end, fd_articles_img.img_url,amount
+         FROM event_schedule s
+         JOIN fd_articles a on s.id_event = a.article_id and language = '$code_lang'
+         left join fd_articles_img on a.article_id = fd_articles_img.article_id
+         left join event on a.article_id = event.id_event
+         WHERE s.id_event_schedule = $id";
+
+     $db->query($sql);
+     $r = $db->results();
+     return $r;
+}
 function getScheduleDetail($id,$code_lang = NULL){
        $db = DB::getInstance();
         if ($code_lang == NULL){$code_lang = $_SESSION['lang']['code'];}
@@ -399,20 +527,20 @@ function getScheduleDetail($id,$code_lang = NULL){
 function getListSchedulesBooked($event_id,$user_id){
     $db = DB::getInstance();
         
-        $sql="select s.id_event_schedule
-            from event_schedule s 
-            join event_attendees a on s.id_event_schedule = a.id_event_schedule
-            where id_event=$event_id and a.id_user = $user_id and deleted_at is null
-            group by s.id_event_schedule";
+    $sql="select s.id_event_schedule
+        from event_schedule s 
+        join event_attendees a on s.id_event_schedule = a.id_event_schedule
+        where id_event=$event_id and a.id_user = $user_id and deleted_at is null
+        group by s.id_event_schedule";
 
-            $db->query($sql);
-            $r = $db->results();
-            $tab = array();
-            
-            foreach ($r as $key => $value) {
-                $tab[$key] = $value->id_event_schedule;
-            }
-            return $tab;
+        $db->query($sql);
+        $r = $db->results();
+        $tab = array();
+        
+        foreach ($r as $key => $value) {
+            $tab[$key] = $value->id_event_schedule;
+        }
+        return $tab;
 }
 function getListSchedules($event_id){
        $db = DB::getInstance();
@@ -485,7 +613,6 @@ function checkEventAvailability($schedule_id,$user_id = NULL){
             
         return $isAvailable;
 }
-
 function getEventDesc($event_id){
     $db = DB::getInstance();
     $sql = "SELECT * FROM event where id_event = ".$event_id;
@@ -494,7 +621,6 @@ function getEventDesc($event_id){
    return ($query->count() > 0  ?  $query->first()  :  FALSE);
     
 }
-
 function displayEventSchedule($id_event){
     Global $scriptJQueryLoad;
     $Event = getListSchedules($id_event);
@@ -531,7 +657,7 @@ function displayEventSchedule($id_event){
         <form class='form-group' id='myformEvent' enctype='multipart/form-data' onsubmit='return (get_editordata() && jaxon_addEventDesc(jaxon.getFormValues(\"myformEvent\")));'>
 
                     <div class='form-row'>
-                        <div class='form-group col-md-4'>
+                        <div class='form-group col-md-3'>
                           <label for='category_level_1'>Category level 1</label>
                           <select class='form-control' id='category_level_1' name='category_level_1'>
                               <option value='子供 / Child'>子供 / Child</option>
@@ -545,7 +671,7 @@ function displayEventSchedule($id_event){
                               <option value='MERGED'>MERGED</option>
                             </select>
                         </div>
-                        <div class='form-group col-md-4'>
+                        <div class='form-group col-md-3'>
                           <label for='cf_sub_category'>Category Level 2</label>
                           <select class='form-control' id='sub_category' name='sub_category'>
                               <option value='（子供）習い事・学童 / Learning - extra curricular - tennis etc school exams'>（子供）習い事・学童 / Learning - extra curricular - tennis etc school exams</option>
@@ -576,13 +702,7 @@ function displayEventSchedule($id_event){
                         </div>
                         <div class='form-group col-md-4'>
                           <label for='category_level_event'>Category Level Event</label>
-                          <select class='form-control' id='category_level_event' name='category_level_event'>
-                              <option value='リラックス-リチャージ / Relax - Recharge'>リラックス-リチャージ / Relax - Recharge</option>
-                              <option value='学び / Learning'>学び / Learning</option>
-                              <option value='感謝を伝える / Gratitude'>感謝を伝える / Gratitude</option>
-                              <option value='趣味 / Hobby'>趣味 / Hobby</option>
-                              <option value='ネットワーキング / Networking'>ネットワーキング / Networking</option>
-                              <option value='フード-ドリンク / Food - Drink'>フード-ドリンク / Food - Drink</option>
+                          <select class='form-control' id='category_level_event' name='category_level_event'>                              
                               <option value='Move'>Move</option>
                               <option value='Learn'>Learn</option>
                               <option value='Family'>Family</option>
@@ -590,6 +710,10 @@ function displayEventSchedule($id_event){
                               <option value='Self-care'>Self-care</option>
                               <option value='Connect'>Connect</option>
                             </select>
+                        </div>
+                        <div class='form-group col-md-2'>
+                          <label for='amount'>Amount</label>
+                          <input type='text' class='form-control form-control-sm mr-2' id='amount' name='amount' value='0'>
                         </div>
                     </div>
                     <button type='submit' class='btn btn-primary btn-lg-xs'>Edit</button>
@@ -649,6 +773,7 @@ function displayEventSchedule($id_event){
             $('#category_level_1').val('".$descEvent->category_level_1."');
             $('#sub_category').val('".$descEvent->sub_category."');
             $('#category_level_event').val('".$descEvent->category_level_event."');
+            $('#amount').val('".$descEvent->amount."');
             $('#summernote_jp').summernote('code','".$markup_jp."');
             $('#summernote_en').summernote('code','".$markup_en."');
           });";
@@ -724,7 +849,6 @@ function displayEventAttendees($id,$title){
      
     return $response;
 }
-
 function displayModalAddUser($schedule_id){
     Global $lang; Global $scriptJQueryLoad;
     
@@ -741,7 +865,6 @@ function displayModalAddUser($schedule_id){
     
     return $response;
 }
-
 function displayEventsList(){
     Global $lang;
     $codeLang = $_SESSION['lang']['code'];
@@ -852,4 +975,29 @@ function displayModalAddSchedule(){
 </div>';
     return $display;
 }
-
+function isScheduleBooked($id_schedule,$user_id){
+    $db = DB::getInstance();
+    $sql = "SELECT * FROM event_attendees where id_event_schedule = $id_schedule and id_user = $user_id and deleted_at is null";
+    
+    $result = $db->query($sql);
+    if($result->count() > 0){
+        return TRUE;
+    }
+    return FALSE;
+}
+function displayEventDescription($id_event){
+    Global $lang;
+    $codeLang = $_SESSION['lang']['code'];
+    $response = new Response();
+    $description = "";
+    $descEvent = getEventDesc($id_event);
+    if ($descEvent){
+        $description = ($codeLang == 'en' ? $descEvent->response_en : $descEvent->response_jp);
+    }
+    $submitButton = '<button type="button" class="btn btn-primary" data-dismiss="modal">'.$lang['MODAL_CLOSE'].'</button>';
+    $response->assign('small-modalEvent-content', 'innerHTML', $description);
+    $response->assign('modalEvent-footer', 'innerHTML', $submitButton);
+    $response->script('$("#myModalEventLabel").html("");$("#myModalEvent").modal({"show":true});');
+    
+    return $response;
+}

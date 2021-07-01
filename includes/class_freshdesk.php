@@ -84,7 +84,7 @@ class freshdesk {
     
     public function getTicketList($requester){
         $uri=urlencode($requester);
-        $url='https://tpoconcierge.freshdesk.com/api/v2/tickets?requester_id='.$requester.'&include=description';
+        $url='https://tpoconcierge.freshdesk.com/api/v2/tickets?requester_id='.$requester.'&include=description&per_page=100';
         $result= $this->sendRequest('GET',$url);        
         return $result;              
     }

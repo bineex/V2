@@ -57,8 +57,6 @@ function importFolders_byCategory($id_category){
          $query = $db->insert("fd_folders",
                 ['id'=>$vF['id'], 'name'=>$vF['name'],'description'=>$vF['description'],'created_at'=>$vF['created_at'],'updated_at'=>$vF['updated_at'],'visibility'=>$vF['visibility']]);
          
-         //print_r($vF);
-         echo '<br>';
         if (isset($vF['company_ids'])){
             foreach($vF['company_ids'] as $companies){
                 $query3 = $db->insert("fd_folders_companies",
@@ -114,25 +112,9 @@ function importArticles_byFolder($id_folder,$lang){
                     'created_at'=>$vA['created_at'],'updated_at'=>$vA['updated_at']
                  ]);
 
-         echo $vA['id']. ' - '. $vA['title']. ' -> '. $tagText. ' - '. $attch;
-         echo "<br>";
-         //print_r($db->errorInfo());
-         echo "<br>";
+         echo ($vA['id']."\n");
          
          
-    }
-     return true;
-
-}
-
-function importPortals(){
-    global $db;
-    $freshObj= new freshdesk();    
-    $tabP = $freshObj->getProducts();
-   
-    foreach ($tabP as $keyP=>$vP){
-         $query = $db->insert("fd_portals",
-                ['id'=>$vP['id'], 'name'=>$vP['name']]);
     }
      return true;
 
@@ -183,13 +165,7 @@ function updateArticles_Img(){
                     'hits'=>$vA['hits'],'tags'=>$tagText,'status'=>$vA['status'],'title'=>$vA['title'],'status'=>$vA['status'],
                     'agent_id'=>$vA['agent_id'],'type'=>$vA['type'],
                     'created_at'=>$vA['created_at'],'updated_at'=>$vA['updated_at']
-                 ]);
-
-         echo $vA['id']. ' - '. $vA['title']. ' -> '. $tagText. ' - '. $attch;
-         echo "<br>";
-         //print_r($db->errorInfo());
-         echo "<br>";
-         
+                 ]);      
          
     }
      return true;
@@ -220,9 +196,7 @@ function displayArticle($id_article,$lang){
     foreach ($tabA as $keyA=>$vA){
         
         $tagText='';
-        echo '<br>';        
-         print_r($vA);
-         echo '<br>';
+
         if (isset($vA['tags']) && count($vA['tags'])>0){
             $first=true;
             foreach ($vA['tags'] as $tag){
@@ -232,11 +206,7 @@ function displayArticle($id_article,$lang){
             }
         }
 
-         echo $vA['id']. ' - '. $vA['title']. ' -> '. $tagText;
-         echo "<br>";
-         //print_r($db->errorInfo());
-         echo "<br>";
-         
+         echo $vA['id']. ' - '. $vA['title']. "\n";
          
     }
      return true;
@@ -270,7 +240,36 @@ function updateUser_signup(){
     echo $i;
     return true;
 }
+function updateUser_company(){
+    global $db;
+    $sql="SELECT * FROM users where company_id is null";
+    
+    $db->query($sql);
+    $users = $db->results();
+    $i = 1;
+    foreach ($users as $user) {
+        $id = $user->fd_id;        
+        $freshUsers= new freshdesk();           
+        $values = $freshUsers->getUser($id);
 
+        if (isset($values['company_id']) and !empty($values['company_id'])){
+            $company_id = $values['company_id'];
+
+            if (!empty($values['other_companies'])){
+                $company_id = $values['other_companies'][0]['company_id'];
+            }
+            $sql = "update users set company_id = $company_id where fd_id = $id";
+            $db->query($sql);
+        }
+        else {
+            $sql = "update users set company_id = 0 where fd_id = $id";
+            $db->query($sql);
+        }
+        $i++;
+    }
+    echo "Completed: ".$i;
+    return true;
+}
 function updateTicket_category(){
     global $db;
     $sql="select * from fd_ticket_category where state = 'C'";
@@ -297,7 +296,6 @@ function updateTicket_category(){
     return true;
 
 }
-
 function importAgents($email_agent = NULL){
     global $db;
     $freshUsers= new freshdesk();           
@@ -355,6 +353,7 @@ function importAgents($email_agent = NULL){
 }
 //$r1 = displayArticle('35000099268','en');
 //$r2 = importCompanies();
+$r4 = updateUser_company();
 $r3 = importSolutions();
 //$r3 = displayArticles();
 //$r3 = updateTicket_category();

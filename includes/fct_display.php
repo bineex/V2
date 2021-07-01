@@ -12,7 +12,6 @@ require_once ('fct_admin_event.php');
 require_once ('fct_freshdesk.php');
 require_once ('fct_account.php');
 require_once ('class_articles.php');
-require_once ('class_survey.php');
 //Ajax Librairy ----
 // and the Response class
 // Get the core singleton object
@@ -23,12 +22,38 @@ $jaxon->register(Jaxon::USER_FUNCTION, 'displayWelcomeEvent');
 $jaxon->register(Jaxon::USER_FUNCTION, 'displayWelcome');
 $jaxon->register(Jaxon::USER_FUNCTION, 'displayNewsDetail');
 $jaxon->register(Jaxon::USER_FUNCTION, 'joinEvent');
+$jaxon->register(Jaxon::USER_FUNCTION, 'joinEventDirect');
+$jaxon->register(Jaxon::USER_FUNCTION, 'initStripe');
 $jaxon->register(Jaxon::USER_FUNCTION, 'leaveEvent');
 $jaxon->register(Jaxon::USER_FUNCTION, 'alertUnlogged');
 $jaxon->register(Jaxon::USER_FUNCTION, 'displayRequestFormType');
 $jaxon->register(Jaxon::USER_FUNCTION, 'createGuestForm');
 $jaxon->register(Jaxon::USER_FUNCTION, 'addGuestToList');
 
+$company = $GLOBALS['company'];
+
+function formatDateJP($date){
+    Global $lang;
+
+    if ($lang['CODE'] == 'ja-JP'){
+      $fullFormatterjp = new IntlDateFormatter(
+        'ja_JP',
+        IntlDateFormatter::FULL,
+        IntlDateFormatter::NONE
+      );
+      return datefmt_format( $fullFormatterjp , strtotime($date));
+    } else {
+        $fullFormatterjp = new IntlDateFormatter(
+            'en_US',
+            IntlDateFormatter::FULL,
+            IntlDateFormatter::NONE,
+            NULL,
+            IntlDateFormatter::GREGORIAN  ,"EEE, MMM d"
+        );
+        //return datefmt_format( $fullFormatterjp , strtotime($date));
+        return $fullFormatterjp->format(strtotime($date));
+    }
+}
 
 function isBrowserIE(){
     if(strpos($_SERVER['HTTP_USER_AGENT'],'Trident'))
@@ -51,12 +76,11 @@ function alertUnlogged () {
 }
 function display_navbar($nameUser = FALSE, $permissions = -1){
     Global $lang;
-    
+    $company = $GLOBALS['company'];
     $display= '<div id="header" class="navbar-toggleable-md static clearfix">
-
          <!-- TOP NAV -->
         <header id="topNav">
-                <div class="container">
+            <div class="container">
 
                     <!-- Mobile Menu Button -->
                     <button class="btn btn-mobile" data-toggle="collapse" data-target=".nav-main-collapse">
@@ -67,44 +91,60 @@ function display_navbar($nameUser = FALSE, $permissions = -1){
                     <a class="logo float-left" href="index.php">
                        <img src="'.$GLOBALS['company']['logo'].'" alt="logo">
                     </a>';
-                  if ($permissions > -1){
+                if ($permissions > -1){
                     $display .= '<div class="navbar-collapse collapse float-right nav-main-collapse submenu-dark"> 
+                    <nav class="nav-main">
+                    <ul id="topMain" class="nav nav-pills nav-main nav-onepage">';
 
-                        <nav class="nav-main">
-
-                        <ul id="topMain" class="nav nav-pills nav-main nav-onepage">';
+                    switch ($company['id']) {
+                        case '35001064691':
+                            if ($nameUser){
+                                $display .= '<li><a href="index.php#requests">'.$lang['NAV_REQUESTS'].'</a></li>';
+                                $display .= '<li><a href="index.php#blog">'.$lang['NAV_NEWS'].'</a></li>';        
+                                $display .= '<li><a href="index.php#events">'.$lang['NAV_PROGRAMS'].'</a></li>';
+                                $display .= '<li><a href="index.php#howto_signup">'.$lang['NAV_HOWTO_SIGNUP'].'</a></li>';
+                                $display .= '<li><a href="index.php#faq">'.$lang['NAV_FAQ'].'</a></li>';
+                                $display .= '<li><a href="index.php#contact">'.$lang['NAV_CONTACT'].'</a></li>';
+                            }
+                            else{
+                                $display .= '<li><a href="index.php#blog">'.$lang['NAV_NEWS'].'</a></li>';
+                                $display .= '<li><a href="index.php#programs">'.$lang['NAV_PROGRAMS'].'</a></li>';                                
+                                $display .= '<li><a href="index.php#howto_signup">'.$lang['NAV_HOWTO_SIGNUP'].'</a></li>';
+                                $display .= '<li><a href="index.php#price">'.$lang['NAV_PRICE'].'</a></li>';
+                                $display .= '<li><a href="index.php#contact">'.$lang['NAV_CONTACT'].'</a></li>';
+                            }                            
+                            break;
+                        case '35001261629':
+                            $display .= '';
+                            $display .= '<li><a href="index.php#contact">'.$lang['NAV_CONTACT'].'</a></li>';            
+                            break;
                         
-                    if ($nameUser){
-                        $display .= '<li><a href="index.php#requests">'.$lang['NAV_REQUESTS'].'</a></li>';                            
-                    }
-                    
-                    $display .= '<li><a href="index.php#blog">'.$lang['NAV_NEWS'].'</a></li>';
-                    
-                    if ($GLOBALS['company']['sections']['event']){
-                        $display .= '<li><a href="index.php#events">'.$lang['NAV_EVENT'].'</a></li>';
-                    }
-                    /*
-                    if ($GLOBALS['company']['sections']['event']){
-                        if ($nameUser && $GLOBALS['company']['sections']['event']){$link='href="index.php#events"';} else {$link='href="#" onClick="jaxon_alertUnlogged();return false;"';}
-                        $display .= '<li><a '.$link.'>'.$lang['NAV_EVENT'].'</a></li>';
-                    }
-                     * 
-                     */
-                    if ($GLOBALS['company']['sections']['how_to']){
-                        $display .= '<li><a href="index.php#howto">'.$lang['NAV_HOWTO'].'</a></li>';
-                    }
-                   
-                    if ($GLOBALS['company']['sections']['about']) {
-                        $display .= '<li><a href="index.php#about">'.$lang['NAV_ABOUT'].'</a></li>';           
-                    }
-                    if ($GLOBALS['company']['sections']['example']) {
-                        $display .= '<li><a href="index.php#example">'.$lang['NAV_EXAMPLE'].'</a></li>';           
-                    }
-                    if ($GLOBALS['company']['sections']['team']) {
-                        $display .= '<li><a href="index.php#team">'.$lang['NAV_TEAM'].'</a></li>';
-                    }
-                    if ($nameUser && $GLOBALS['company']['sections']['faq']){
-                        $display .= '<li><a href="index.php#faq">'.$lang['NAV_FAQ'].'</a></li>';
+                        default:
+                            if ($nameUser){
+                                $display .= '<li><a href="index.php#requests">'.$lang['NAV_REQUESTS'].'</a></li>';                            
+                            }
+                            if ($GLOBALS['company']['sections']['news']){
+                                $display .= '<li><a href="index.php#blog">'.$lang['NAV_NEWS'].'</a></li>';
+                            }                        
+                            if ($GLOBALS['company']['sections']['event']){
+                                $display .= '<li><a href="index.php#events">'.$lang['NAV_EVENT'].'</a></li>';
+                            }
+                            if ($GLOBALS['company']['sections']['how_to']){
+                                $display .= '<li><a href="index.php#howto">'.$lang['NAV_HOWTO'].'</a></li>';
+                            }                       
+                            if ($GLOBALS['company']['sections']['about']) {
+                                $display .= '<li><a href="index.php#about">'.$lang['NAV_ABOUT'].'</a></li>';           
+                            }
+                            if ($GLOBALS['company']['sections']['example']) {
+                                $display .= '<li><a href="index.php#example">'.$lang['NAV_EXAMPLE'].'</a></li>';           
+                            }
+                            if ($GLOBALS['company']['sections']['team']) {
+                                $display .= '<li><a href="index.php#team">'.$lang['NAV_TEAM'].'</a></li>';
+                            }
+                            if ($nameUser && $GLOBALS['company']['sections']['faq']){
+                                $display .= '<li><a href="index.php#faq">'.$lang['NAV_FAQ'].'</a></li>';
+                            }
+                            break;
                     }
                     if ($nameUser){
                         $display .= '<li class="dropdown">
@@ -115,6 +155,12 @@ function display_navbar($nameUser = FALSE, $permissions = -1){
                                 <li><a href="profile.php">'.$lang['NAV_PROFILE'].'</a></li>';
                                 if ($permissions == 2){
                                     $display .= '<li><a href="admin.php">Admin</a></li>';
+                                }
+                                if (isset($company['subscription_id']) && $company['subscription_id']){
+                                    $display .= '<li><a href="javascript:jaxon_displaySubscription();">'.$lang['NAV_SUBSCRIPTION'].'</a></li>';
+                                }
+                                if (isset($company['sponsorship_request']) && $company['sponsorship_request']){
+                                    $display .= '<li><a href="javascript:jaxon_displayFormSponsorshipRequest();">Family request</a></li>';
                                 }
                                 $display .= '<li><a href="logout.php">'.$lang['SIGNOUT_TEXT'].'</a></li>
                             </ul>               
@@ -137,12 +183,11 @@ function display_navbar($nameUser = FALSE, $permissions = -1){
                             </ul>
                         </li>';
                     }
-
-        $display .= '</ul>
+                    $display.='</ul>
 
                         </nav>
                     </div>';
-                  }
+                }
     $display .= '</div>
         </header>
 
@@ -265,7 +310,6 @@ function showSearch(){
     return $content;
 }
 
-
 function showEventDates($arrayDates){
     $booked = FALSE; Global $lang;
     
@@ -278,30 +322,32 @@ function showEventDates($arrayDates){
                     foreach ($arrayDates as $date => $timeline){
         
                         if (strtotime ($date) >= strtotime (date('Y-m-d'))){
-                            $contentDates .= '<li><h5><i class="fa fa-calendar-o"></i> '.$date.'</h5></li>';
-                                        foreach ($timeline as $id => $value){
-                                            if ($value['user_booked']){                                                
-                                                $booked.='<a href="#" onclick="jaxon_leaveEvent('.$id.'); return false;"><li><h5>'.$date.': '.$value['start'].' - '.$value['end'].' <span class="badge badge-danger">'.$lang['BUTTON_UNSUBSCRIBE'].'</span></h5></li></a>';
-                                            }else{
-                                                $qty_available = $value['quantity'] - $value['qty_booked'];
-                                                $datetime = $date." ".$value['start'];
-                                                //strtotime (date('Y-m-d'))
-                                                if (strtotime ($datetime) < time()){
-                                                    $qty="-"; 
-                                                    $badge = "badge-light";                                                
-                                                    $contentDates.='<li><h5>'.$value['start'].' - '.$value['end'].' <span class="badge '.$badge.'">'.$qty.'</span></h5></li>';
-                                                } elseif (intval($qty_available) < 1){
-                                                    $qty="0"; 
-                                                    $badge = "badge-danger";
-                                                    $contentDates.='<li><h5>'.$value['start'].' - '.$value['end'].' <span class="badge '.$badge.'">'.$qty.'</span></h5></li>';
-                                                } else {
-                                                    $qty = intval($qty_available); 
-                                                    $badge = "badge-success";
-                                                    $contentDates.='<li><a href="#" onclick="jaxon_joinEvent('.$id.'); return false;"><h5>'.$value['start'].' - '.$value['end'].' <span class="badge '.$badge.'">'.$qty.'</span></h5></a></li>';
-                                                }
-                                            }
-                                            
-                                        }
+                            $contentDates .= '<li><h5><i class="fa fa-calendar-o"></i> '.formatDateJP($date).'</h5></li>';
+                            foreach ($timeline as $id => $value){
+                                if ($value['user_booked']){                                                
+                                    $booked.='<a href="#" onclick="jaxon_leaveEvent('.$id.'); return false;"><li><h5>'.$date.': '.$value['start'].' - '.$value['end'].' <span class="badge badge-danger">'.$lang['BUTTON_UNSUBSCRIBE'].'</span></h5></li></a>';
+                                }else{
+                                    $qty_available = $value['quantity'] - $value['qty_booked'];
+                                    $datetime = $date." ".$value['start'];
+                                    //strtotime (date('Y-m-d'))
+                                    if (strtotime ($datetime) < time()){
+                                        $qty="-"; 
+                                        $badge = "badge-light";                                                
+                                        $contentDates.='<li><h5>'.$value['start'].' - '.$value['end'].' <span class="badge '.$badge.'">'.$qty.'</span></h5></li>';
+                                    } elseif (intval($qty_available) == 0){
+                                        $qty="0"; 
+                                        $badge = "badge-danger";
+                                        $contentDates.='<li><h5>'.$value['start'].' - '.$value['end'].' <span class="badge '.$badge.'">'.$qty.'</span></h5></li>';
+                                    } elseif (intval($qty_available) < 0){
+                                        
+                                    } else {
+                                        $qty = intval($qty_available); 
+                                        $badge = "badge-success";
+                                        $contentDates.='<li><a href="#" onclick="jaxon_joinEvent('.$id.'); return false;"><h5>'.$value['start'].' - '.$value['end'].' <span class="badge '.$badge.'">'.$qty.'</span></h5></a></li>';
+                                    }
+                                }
+                                
+                            }
                         }
                     }
     $contentDates .= '</ul></div>';
@@ -358,13 +404,15 @@ function showCard($objPost){
 
 function displayModal(){
     Global $lang;
-    $display='<div class="modal fade bs-example-modal-lg" id="modalp" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+    $display='<div class="modal fade bs-example-modal-lg" id="modalp" tabindex="-1" role="dialog" aria-labelledby="modal-title" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
           <div class="modal-content">
-                <div class="modal-header">		
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">&times;</button>
-                    <h4 class="modal-title" id="modal-title">Large modal</h4>
-                </div>
+                <div class="modal-header">                    	
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h5 class="modal-title" id="modal-title">Large modal</h5>
+                </div>                    
                 <div class="modal-body">
                   <div id="contentModal"></div>
                 </div>
@@ -380,23 +428,47 @@ function displayModal(){
 function displayModalJoin(){
     $display='<div id="myModalEvent" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalEventLabel" aria-hidden="true">
 	<div class="modal-dialog">
-            <form class="eventInsForm" id="eventAddAttd" onsubmit="return (get_editordata() && jaxon_addAttendees(jaxon.getFormValues(\'eventAddAttd\')))">
-		<div class="modal-content">
+        <form class="eventInsForm" id="eventAddAttd" onsubmit="return (get_editordata() && jaxon_addAttendees(jaxon.getFormValues(\'eventAddAttd\')))">
+            <div class="modal-content">
 
-			<!-- Modal Header -->
-			<div class="modal-header">				
-				<h4 class="modal-title" id="myModalEventLabel">Modal title</h4>
-			</div>
+                <!-- Modal Header -->
+                <div class="modal-header">				
+                    <h4 class="modal-title" id="myModalEventLabel">Modal title</h4>
+                </div>
 
-			<!-- Modal Body -->
-			<div class="modal-body">
-				<div id="small-modalEvent-content"></div>
-			</div>
+                <!-- Modal Body -->
+                <div class="modal-body">
+                    <div id="small-modalEvent-content"></div>
+                </div>
 
-			<!-- Modal Footer -->
-			<div class="modal-footer" id="modalEvent-footer"></div>
-		</div>
-            </form>
+                <!-- Modal Footer -->
+                <div class="modal-footer" id="modalEvent-footer"></div>
+            </div>
+        </form>
+	</div>
+    </div>';
+    return $display;
+}
+function displayModalJoinDirect(){
+    $display='<div id="myModalEvent" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalEventLabel" aria-hidden="true">
+	<div class="modal-dialog">
+        <form class="eventInsForm" id="eventAddAttd" onsubmit="return (jaxon_addAttendees(jaxon.getFormValues(\'eventAddAttd\'),\'TRUE\'))">
+            <div class="modal-content">
+
+                <!-- Modal Header -->
+                <div class="modal-header">				
+                    <h4 class="modal-title" id="myModalEventLabel">Modal title</h4>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="modal-body">
+                    <div id="small-modalEvent-content"></div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer" id="modalEvent-footer"></div>
+            </div>
+        </form>
 	</div>
     </div>';
     return $display;
@@ -424,15 +496,23 @@ function displayModalSignup(){
 
 		</div>
 	</div>
-</div>';
+    </div>';
     return $display;
 }
-
+function initStripe(){
+    $response = new Response();
+    $url="https://js.stripe.com/v3/";
+    $response->script('$.getScript("'.$url.'");$.getScript("stripe/stripe_script.js");');
+    return $response;
+}
 function joinEvent($id){
-   Global $user; Global $lang;
-   $response = new Response();
-   
-    $uid=$user->data()->fd_id;
+    Global $user; Global $lang; Global $company;
+    $response = new Response();
+
+    $account = $user->data();
+    $email=$account->email;
+    $uid=$account->fd_id;
+
     $codeLang = $_SESSION['lang']['code'];
     
     $isAvailable  = checkEventAvailability($id,$uid);
@@ -443,14 +523,78 @@ function joinEvent($id){
         $response->redirect($_SERVER['REQUEST_URI']);
         return $response;
     }
-    
-    $scheduleDetail = getScheduleDetail($id,$codeLang);
+    if(!empty($company['event_subscription'])){
+        $subscription = getSubscriptionDetail($uid,$company['subscription_id']);
+        $customer_id = ($subscription ? $subscription->customer : FALSE);
+        $subscription_id = ($subscription ? $subscription->subscription_id : FALSE);
+
+        if(empty($customer_id)){
+
+            $display = "<p>".$lang['SUBSCRIPTION_NEEDED']."</p>";
+        
+            $submitButton = "<button type='button' class='btn btn-default' data-dismiss='modal'>".$lang['BUTTON_CANCEL']."</button>
+                <button type='button' onclick='jaxon_initStripe();return false;' id='btnJoin' name='btnJoin' class='btn btn-primary' >".$lang['BUTTON_SUBSCRIBE']."</button>";  
+                
+            unset($_SESSION['subscription']);
+            $_SESSION['subscription']['email'] = $account->email;
+            $_SESSION['subscription']['fd_id'] = $account->fd_id;
+            $_SESSION['subscription']['user_id'] = $account->id;
+            $_SESSION['subscription']['plan'] = $company['subscription_id'];
+            $_SESSION['subscription']['url'] = "https://".$_SERVER['SERVER_NAME'];
+            $_SESSION['subscription']['success_url'] = "https://".$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI']."&sub_id={CHECKOUT_SESSION_ID}";
+            $_SESSION['subscription']['cancel_url'] = "https://".$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
+            $_SESSION['subscription']['config'] = $company['stripe'];
+
+            $response->assign('small-modalEvent-content', 'innerHTML', $display);    
+            $response->assign('modalEvent-footer', 'innerHTML', $submitButton);
+            $response->script('$("#myModalEventLabel").html("'.$lang['BUTTON_SUBSCRIBE'].'");$("#myModalEvent").modal({"show":true});');
+            
+            return $response;
+        }
+        else {
+            $plan = $company['subscription_id'];
+            $uid = $account->fd_id;
+            //$sync = syncSubscription($subscription_id);
+            $subscription_status = checkSubscriptionStatus($uid,$plan);
+            if(empty($subscription_status)){
+                $response->alert($lang['SUBSCRIPTION_STATUS_INVALID']);
+                return $response;
+            }
+        }
+    }
+    $scheduleDetail = getScheduleDetailImg($id,$codeLang);
     $detail = $scheduleDetail[0];
-    
+
+    $payment = $detail->amount;
+    if ($payment > 0){
+        $customer = getSubscriptionCustomer($uid);
+
+        unset($_SESSION['subscription']);
+        $_SESSION['subscription']['config'] = $company['stripe'];
+        $_SESSION['subscription']['email'] = $account->email;
+        $_SESSION['subscription']['fd_id'] = $account->fd_id;
+        $_SESSION['subscription']['user_id'] = $account->id;
+        $_SESSION['subscription']['customer'] = $customer;
+        //$_SESSION['subscription']['name'] = $account->lname;
+        $_SESSION['subscription']['images'] = $detail->img_url;
+        $_SESSION['subscription']['description'] = formatDateJP($detail->date_start).': '.$detail->time_start.' - '.$detail->time_end;
+        $_SESSION['subscription']['name'] = $detail->title;
+        $_SESSION['subscription']['amount'] = $payment;
+        $_SESSION['subscription']['id_schedule'] = $id;
+        $_SESSION['subscription']['url'] = "https://".$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI']."&sch=".$id;
+        
+
+        $url="https://js.stripe.com/v3/";
+        $response->script('$.getScript("'.$url.'");$.getScript("stripe/stripe_script_payment.js");');
+        return $response;
+    }
+    //$scheduleDetail = getScheduleDetail($id,$codeLang);
+    //$detail = $scheduleDetail[0];
+
     $display = ' <ul class="list-group list-group-flush">                                            
                     <li class="list-group-item">
                         <i class="fa fa-calendar-o"></i> 
-                        <span class="font-lato">'.$detail->date_start.'</span>                                               
+                        <span class="font-lato">'.formatDateJP($detail->date_start).'</span>                                               
                     </li>
                     <li class="list-group-item">
                         <i class="fa fa-clock-o"></i> 
@@ -468,6 +612,45 @@ function joinEvent($id){
     $response->assign('small-modalEvent-content', 'innerHTML', $display);    
     $response->assign('modalEvent-footer', 'innerHTML', $submitButton);
     $response->script('$("#myModalEventLabel").html("'.$detail->title.'");$("#myModalEvent").modal({"show":true});');
+    
+    return $response;
+    
+}
+function joinEventDirect($id){
+    Global $user; Global $lang; Global $company;
+    $response = new Response();
+
+    $account = $user->data();
+    $email=$account->email;
+    $uid=$account->fd_id;
+
+    $codeLang = $_SESSION['lang']['code'];
+    
+    $scheduleDetail = getScheduleDetailImg($id,$codeLang);
+    $detail = $scheduleDetail[0];
+
+    $display = ' <ul class="list-group list-group-flush">                                            
+                    <li class="list-group-item">
+                        <i class="fa fa-calendar-o"></i> 
+                        <span class="font-lato">'.formatDateJP($detail->date_start).'</span>                                               
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fa fa-clock-o"></i> 
+                        <span class="font-lato">'.$detail->time_start.' '.$detail->time_end.'</span>                                           
+                    </li>
+                </ul>           
+                <div class="invisible" >
+                    <input type="text" id="user_id" name="user_id" value="'.$uid.'" />
+                    <input type="text" id="schedule_id" name="schedule_id" value="'.$id.'" />
+                </div>';
+    
+    $submitButton = "<button type='button' class='btn btn-default' data-dismiss='modal'>".$lang['BUTTON_CANCEL']."</button>
+        <button type='submit' id='btnJoin' name='btnJoin' class='btn btn-primary' >".$lang['BUTTON_SUBSCRIBE']."</button>";  
+    
+    $response->assign('small-modalEvent-content', 'innerHTML', $display);    
+    $response->assign('modalEvent-footer', 'innerHTML', $submitButton);
+    $response->script('$("#myModalEventLabel").html("'.$detail->title.'");$("#myModalEvent").modal({"show":true});');
+    
     return $response;
     
 }
@@ -533,6 +716,7 @@ function displayEvent($event_id){
             $event['img_url'] = $value->img_url;
             $event['title'] = $value->title;
             $event['description']= $value->description;
+            $event['amount']= $value->amount;
             $event['tags']= $value->tags;
             $event['schedule'][$value->date_start][$value->id_event_schedule]['start'] = $value->time_start;
             $event['schedule'][$value->date_start][$value->id_event_schedule]['end'] = $value->time_end;
@@ -553,7 +737,6 @@ function displayEvent($event_id){
         $i++;
     }
 
-    
     $d_event = showEvent($event);
     $d_timeline = showEventDates($event['schedule']);
     $d_tags = formatTags($Tags);
@@ -575,11 +758,12 @@ function displayEvent($event_id){
                                     <h3 class="hidden-xs-down fs-16 mb-20">TAGS</h3>
                                         '.$d_tags.'
                                     <hr />
+                                    
                             </div>
                     </div>
             </div>
     </section>';
-    
+    //<h6 class="hidden-xs-down fs-16 mb-20">'.$event['amount'].'</h6>
     return $display;
 }
 
@@ -624,7 +808,6 @@ function displayExample($article_id){
     
     $d_post = showPost($Post[0]);
     $d_tags = formatTags($Tags);
-    $d_posts = showPostListMini();
     
     $display = '<section>
             <div class="container">
@@ -737,7 +920,7 @@ function displayBNews(){
 }
 function displayBlog($article_id){
     Global $lang;
-    $codeLang = $_SESSION['lang']['code'];
+    $codeLang = $_SESSION['lang']['code']; 
     $id_company = $GLOBALS['company']['id'];
     
     $title=$lang['SECTION_EVENT_TITLE'];
@@ -751,7 +934,7 @@ function displayBlog($article_id){
     
     $d_post = showPost($Post[0]);
     $d_tags = formatTags($Tags);
-    $d_posts = showPostListMini();
+    //$d_posts = showPostListMini();
     
     $display = '<section>
             <div class="container">
@@ -769,16 +952,13 @@ function displayBlog($article_id){
                                     <!-- TAGS -->
                                     <h3 class="hidden-xs-down fs-16 mb-20">TAGS</h3>
                                         '.$d_tags.'
-                                    <hr />
-                                    <!-- TAGS -->
-                                    <h3 class="hidden-xs-down fs-16 mb-20">Recent</h3>
-                                        '.$d_posts.'
-                                    <hr />
+                                    <hr />                                    
                             </div>
                     </div>
             </div>
     </section>';
     return $display;
+
 }
 
 function displaySectionBlog(){
@@ -889,14 +1069,15 @@ function displaySectionEvents(){
                                                     $qty="-"; 
                                                     $badge = "badge-light";
                                                     //$display.='<li><h6 class="text-muted">'.$date['date'].' <span class="badge '.$badge.'">'.$qty.'</span></h6></li>';
-                                                } elseif (intval($date['quantity']) < 1){
+                                                } elseif (intval($date['quantity']) == 0){
                                                     $qty="0"; 
                                                     $badge = "badge-danger";
-                                                    $display.='<li><h6 class="text-muted">'.$date['date'].' <span class="badge '.$badge.'">'.$qty.'</span></h6></li>';
+                                                    $display.='<li><h6 class="text-muted">'.formatDateJP($date['date']).' <span class="badge '.$badge.'">'.$qty.'</span></h6></li>';
+                                                } elseif (intval($date['quantity']) < 0){                                                    
                                                 } else {
                                                     $qty = intval($date['quantity']); 
                                                     $badge = "badge-success";
-                                                    $display.='<li><h6>'.$date['date'].' <span class="badge '.$badge.'">'.$qty.'</span></h6></li>';
+                                                    $display.='<li><h6>'.formatDateJP($date['date']).' <span class="badge '.$badge.'">'.$qty.'</span></h6></li>';
                                                 }
 
                                             }
@@ -916,79 +1097,81 @@ function displaySectionEvents(){
         </section>';
     return $display;
 }
-function displaySectionEventsBK(){
+function displaySectionEventsPayment(){
     Global $lang;
     $codeLang = $_SESSION['lang']['code'];
     $id_company = $GLOBALS['company']['id'];
-    
-    $title=$lang['SECTION_EVENT_TITLE'];
-    $subtitle=$lang['SECTION_EVENT_SUBTITLE'];
+    $nbItems = $GLOBALS['company']['sections']['event_items'];
+    $title=$lang['SECTION_EVENTP_TITLE'];
+    $subtitle=$lang['SECTION_EVENTP_SUBTITLE'];
     
     $sectionTitle=SectionTitle($title,$subtitle);
     
     $Articles= new articles();    
-    $Events = $Articles->getEvents($id_company,$codeLang);
+    $Events = $Articles->getEventsPayment($id_company,$codeLang);
+    $EventsSorted = $Articles->getEventsSorted();
     
     $current="";
     $event = [];
-    foreach ($Events as $value) {
-        if ($current != $value->article_id){
-            $i = 0;
-            $current = $value->article_id;
-            $event[$value->article_id]['img_url'] = $value->img_url;
-            $event[$value->article_id]['title'] = $value->title;
-            $event[$value->article_id]['end'] = $value->date_start;
-            $event[$value->article_id]['schedule'][$i]['date'] = $value->date_start;
-            $event[$value->article_id]['schedule'][$i]['quantity'] = intval($value->qty) - intval($value->qty_booked);
-            
-            
-        } else{
-            $event[$value->article_id]['end'] = MAX($event[$value->article_id]['end'],$value->date_start);
-            $event[$value->article_id]['schedule'][$i]['date'] = $value->date_start;
-            $event[$value->article_id]['schedule'][$i]['quantity'] = intval($value->qty) - intval($value->qty_booked);
+        foreach ($Events as $value) {
+            if ($current != $value->article_id){
+                $i = 0;
+                $current = $value->article_id;
+                $event[$value->article_id]['img_url'] = $value->img_url;
+                $event[$value->article_id]['title'] = $value->title;
+                $event[$value->article_id]['end'] = $value->date_start;
+                $event[$value->article_id]['schedule'][$i]['date'] = $value->date_start;
+                $event[$value->article_id]['schedule'][$i]['quantity'] = intval($value->qty) - intval($value->qty_booked);
+            } else{
+                $event[$value->article_id]['end'] = MAX($event[$value->article_id]['end'],$value->date_start);
+                $event[$value->article_id]['schedule'][$i]['date'] = $value->date_start;
+                $event[$value->article_id]['schedule'][$i]['quantity'] = intval($value->qty) - intval($value->qty_booked);
+            }
+            $i++;
         }
-        $i++;
-    }
     $display = '<section class="section-xs" id="events">
             <div class="container">'.$sectionTitle.'
-                <div id="events" class="portfolio-gutter pajinate" data-pajinante-items-per-page="3" data-pajinate-container=".pajinate-container">
+                <div id="events" class="portfolio-gutter pajinate" data-pajinante-items-per-page="'.$nbItems.'" data-pajinate-container=".pajinate-container">
                     <div class="row pajinate-container">';
-                foreach ($event as $key => $item) {
-                    $id = $key;
+    
+        
+                //foreach ($event as $key => $item) {
+                foreach ($EventsSorted as $es) {
+                    $id = $es->id_event;
+                    if (!isset($event[$id])){
+                        continue;
+                    }
+                    //$id = $key;
+                    $item = $event[$id];
                     $display.=' <div class="col-md-4 col-sm-6">
                                     <div class="item-box">
+                                    <a href="event.php?u='.$id.'">
                                         <figure>
-                                            <span class="item-hover">
-                                                    <span class="overlay dark-5"></span>
-                                                <span class="inner"><!-- details -->
-                                                        <a class="ico-rounded" href="event.php?u='.$id.'">
-                                                                <span class="glyphicon glyphicon-option-horizontal fs-20"></span>
-                                                        </a>
-                                                </span>
-                                            </span>
-                                            <img class="img-fluid" src="'.$item['img_url'].'" alt="">
-                                        </figure>                        
+                                                <span class="item-hover"><span class="overlay dark-5"></span></span>
+                                                <img class="img-fluid" src="'.$item['img_url'].'" alt="">
+                                        </figure>
                                         <div class="item-box-desc">
                                             <a href="event.php?u='.$id.'"><h3>'.$item['title'].'</h3></a>
                                             <br>
                                             <ul class="list-inline">';
                                             foreach ($item['schedule'] as $date) {
-                                                if (strtotime ($date['date']) < time()){
+                                                if (strtotime ($date['date']) < strtotime (date('Y-m-d'))){
                                                     $qty="-"; 
                                                     $badge = "badge-light";
-                                                    $display.='<li><h6 class="text-muted">'.$date['date'].' <span class="badge '.$badge.'">'.$qty.'</span></h6></li>';
-                                                } elseif (intval($date['quantity']) < 1){
+                                                    //$display.='<li><h6 class="text-muted">'.$date['date'].' <span class="badge '.$badge.'">'.$qty.'</span></h6></li>';
+                                                } elseif (intval($date['quantity']) == 0){
                                                     $qty="0"; 
                                                     $badge = "badge-danger";
-                                                    $display.='<li><h6 class="text-muted">'.$date['date'].' <span class="badge '.$badge.'">'.$qty.'</span></h6></li>';
+                                                    $display.='<li><h6 class="text-muted">'.formatDateJP($date['date']).' <span class="badge '.$badge.'">'.$qty.'</span></h6></li>';
+                                                } elseif (intval($date['quantity']) < 0){                                                    
                                                 } else {
                                                     $qty = intval($date['quantity']); 
                                                     $badge = "badge-success";
-                                                    $display.='<li><h6>'.$date['date'].' <span class="badge '.$badge.'">'.$qty.'</span></h6></li>';
+                                                    $display.='<li><h6>'.formatDateJP($date['date']).' <span class="badge '.$badge.'">'.$qty.'</span></h6></li>';
                                                 }
 
                                             }
-                    $display.='</ul></div></div></div>'; 
+                    $display.='</ul></div></a></div></div>'; 
                 }
 
             $display.='</div>
@@ -1004,7 +1187,109 @@ function displaySectionEventsBK(){
         </section>';
     return $display;
 }
+function displaySectionWeekEvents(){
+    Global $lang;Global $user;
 
+    $account = $user->data();
+    $user_id = $account->fd_id;
+
+    $codeLang = $_SESSION['lang']['code'];
+    $id_company = $GLOBALS['company']['id'];
+    $nbItems = 5;
+    $title=$lang['SECTION_EVENT_TITLE'];
+    $subtitle=$lang['SECTION_EVENT_SUBTITLE'];
+    
+    $sectionTitle=SectionTitle($title,$subtitle);
+    
+    $Articles= new articles();     
+    $Events = $Articles->getEventsbyDate($id_company,$codeLang);
+
+    $firstday = date('Y-m-d', strtotime("this week"));
+
+    $current="";
+    $event = [];
+    foreach ($Events as $value) {
+            $current = $value->date_start;
+            $event[$value->date_start][$value->id_event_schedule]['id_event'] = $value->id_event;
+            $event[$value->date_start][$value->id_event_schedule]['title'] = $value->title;
+            $event[$value->date_start][$value->id_event_schedule]['img_url'] = $value->img_url;
+            $event[$value->date_start][$value->id_event_schedule]['id_schedule'] = $value->id_event_schedule;
+            $event[$value->date_start][$value->id_event_schedule]['time_start'] = $value->time_start;
+            $event[$value->date_start][$value->id_event_schedule]['time_end'] = $value->time_end;
+        
+    }
+    $display = '<section class="section-xs" id="events">
+            <div class="container">'.$sectionTitle.'
+                <div id="events" class="portfolio-gutter pajinate" data-pajinante-items-per-page="'.$nbItems.'" data-pajinate-container=".pajinate-container">
+                    <!-- Pagination Default -->
+                    <div class="pajinate-nav">
+                            <ul class="pagination">
+                                    <!-- pages added by pajinate plugin -->
+                            </ul>
+                    </div>
+                    <!-- /Pagination Default -->
+                    <div class="row pajinate-container ">';
+
+                    $currentday = $firstday;
+                for ($w = 1; $w <= 4; $w++) {
+                    $boxstyle = "";
+                    for ($i = 1; $i <= 5; $i++) {
+                        $boxstyle = ($i%2 ? "" : "box-transparent");
+                        $boxstyle = (strtotime ($currentday) == strtotime (date('Y-m-d')) ? "box-color" : $boxstyle);
+                        $display.=' <div class="p-2 col-md-5th col-sm-5th text-center box-static box-border-top '.$boxstyle.'">
+                                        <h4>'.formatDateJP($currentday).'</h4>';
+
+                        if (isset($event[$currentday])){
+                            $eventsDay = $event[$currentday];
+                            foreach ($eventsDay as $schedule_id => $values){
+                                $display.='<div class="price-clean">
+                                    <a href="event.php?u='.$values['id_event'].'">
+                                        <figure>
+                                            <img class="img-fluid" src="'.$values['img_url'].'" alt="'.$values['title'].'">
+                                        </figure>
+                                    </a>
+                                    <p class="h-70">'.$values['title'].'</p>
+                                    <hr />
+                                    <p>'.$values['time_start'].' - '.$values['time_end'].'</p>';
+                                        
+                                            
+                                        
+                                //if (strtotime ($currentday) == strtotime (date('Y-m-d')) && strtotime ($event[$currentday]['time_start']) > time()){
+                                    $button='';
+                                if ((strtotime ($currentday) > strtotime (date('Y-m-d'))) || (strtotime ($currentday) ==  strtotime (date('Y-m-d')) && strtotime ($values['time_end']) > time())){
+                                
+                                        if (isScheduleBooked($schedule_id,$user_id)){
+                                            //$display.=' <a href="#" onclick="jaxon_joinEventDirect('.$event[$currentday]['id_schedule'].'); return false;" class="btn btn-outline-primary">View</a>';
+                                            $button.='<a class="btn btn-primary" href="#" onclick="jaxon_displayEventDescription('.$values['id_event'].')">View</a>';
+                                        } else {
+                                            //$display.='<li><button type="button" class="btn btn-outline-primary" onclick="jaxon_joinEventDirect('.$schedule_id.')">'.$lang['BUTTON_SUBSCRIBE'].'</button></li>';
+                                            $button.='<a class="btn btn-primary" href="#" onclick="jaxon_joinEventDirect('.$schedule_id.')">'.$lang['BUTTON_SUBSCRIBE'].'</a>';
+                                        }
+                                    
+                                }
+                                $display.= '<p class="h-50">'.$button.'</p></div>';
+                            }
+                        }
+                        $display.='</div>';                        
+                        $currentday = date("Y-m-d", strtotime($currentday.'+ 1 days'));
+                        
+                    }
+                    $currentday = date("Y-m-d", strtotime($currentday.'+ 2 days'));
+                }
+
+            $display.='</div>
+                <!-- Pagination Default -->
+                    <div class="pajinate-nav">
+                            <ul class="pagination">
+                                    <!-- pages added by pajinate plugin -->
+                            </ul>
+                    </div>
+                <!-- /Pagination Default -->
+            </div>
+            </div>
+        </section>';
+    return $display;
+}
 function displaySectionFAQ(){
     Global $lang;
     $codeLang = $_SESSION['lang']['code'];
@@ -1042,7 +1327,6 @@ function displaySectionFAQ(){
     
     
 }
-
 function displaySectionAbout(){
     Global $lang;
     $title=$lang['SECTION_ABOUT_TITLE'];
@@ -1111,7 +1395,98 @@ function displaySectionTeam(){
         </section>';
     return $display;
 }
-
+function displaySectionPrograms(){
+    Global $lang;
+    $title=$lang['SECTION_PROGRAMS_TITLE'];
+    $subtitle=$lang['SECTION_PROGRAMS_SUBTITLE'];
+    
+    $sectionTitle=SectionTitle($title,$subtitle);
+    $display='<section id="programs">
+            <div class="container">'.$sectionTitle;             
+                $i = 1;
+                    While(isset($lang['PROG_'.$i])){
+                         $display.='<div class="row pb-4">';
+                         $j = 1;
+                          While($j<=3){
+                            $display.='
+                            <div class="col-md-4 col-sm-6">
+                                <div class="box-flip box-color box-icon box-icon-center box-icon-round box-icon-large text-center">
+                                    <div class="front">
+                                        <div class="box1 box-default">
+                                            <div class="box-icon-title">
+                                                <img class="img-fluid" src="'.$lang["PROG_".$i]["PHOTO"].'" alt="" />
+                                                <h2>'.$lang["PROG_".$i]["NAME"].'</h2>    
+                                                <hr />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="back">
+                                        <div class="box2 box-default">
+                                            <h4 class="m-0">'.$lang["PROG_".$i]["NAME"].'</h4>
+                                            <hr />
+                                            <p>'.$lang["PROG_".$i]["BIO"].'</p>
+                                            <hr />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>';
+                            $j++;$i++;
+                            if (!isset($lang['PROG_'.$i])){
+                                break;
+                            }
+                          }
+                        $display.='</div>';                         
+                    }
+                $display.='</div>
+        </section>';
+    return $display;
+}
+function displaySectionPrivates(){
+    Global $lang;
+    $title=$lang['SECTION_PRIVATES_TITLE'];
+    $subtitle=$lang['SECTION_PRIVATES_SUBTITLE'];
+    
+    $sectionTitle=SectionTitle($title,$subtitle);
+    $display='<section id="programs">
+            <div class="container">'.$sectionTitle;             
+                $i = 1;
+                    While(isset($lang['SERV_'.$i])){
+                         $display.='<div class="row pb-4">';
+                         $j = 1;
+                          While($j<=3){
+                            $display.='
+                            <div class="col-md-4 col-sm-6">
+                                <div class="box-flip box-color box-icon box-icon-center box-icon-round box-icon-large text-center">
+                                    <div class="front">
+                                        <div class="box1 box-default">
+                                            <div class="box-icon-title">
+                                                <img class="img-fluid" src="'.$lang["SERV_".$i]["PHOTO"].'" alt="" />
+                                                <h2>'.$lang["SERV_".$i]["NAME"].'</h2>    
+                                                <hr />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="back">
+                                        <div class="box2 box-default">
+                                            <h4 class="m-0">'.$lang["SERV_".$i]["NAME"].'</h4>
+                                            <hr />
+                                            <p>'.$lang["SERV_".$i]["BIO"].'</p>
+                                            <hr />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>';
+                            $j++;$i++;
+                            if (!isset($lang['SERV_'.$i])){
+                                break;
+                            }
+                          }
+                        $display.='</div>';                         
+                    }
+                $display.='</div>
+        </section>';
+    return $display;
+}
 function displaySectionExample(){
      Global $lang;
     $codeLang = $_SESSION['lang']['code'];
@@ -1195,6 +1570,116 @@ function displaySectionHowto(){
  
     return $display;
 }
+function displaySectionHowtoSignup(){
+    Global $lang;
+    
+   $title=$lang['SECTION_HOWTO_SIGNUP_TITLE'];
+   $subtitle=$lang['SECTION_HOWTO_SIGNUP_SUBTITLE'];
+   
+   $sectionTitle=SectionTitle($title,$subtitle);
+   
+   $display='<section id="howto_signup">
+           <div class="container"> 
+           '.$sectionTitle;
+   
+            $i = 1;
+           While(isset($lang['HOWTOS_'.$i.'_TITLE'])){
+                $display.='<div class="row">';
+                $j = 1;
+                While($j<=3){
+                   $display .='<div class="col-md-12 col-sm-12 col-lg-4 margin-b-30">
+                                   <div class="ico-light ico-lg ico-rounded ico-hover sr-delay-1">
+                                       <div class="text-center">
+                                           <div class="col-4 ml-auto mr-auto">
+                                               <img src="'.$lang['HOWTOS_'.$i.'_ICON'].'" class="img-fluid" alt="service-img">
+                                           </div> 
+                                           <h4>'.$lang['HOWTOS_'.$i.'_TITLE'].'</h4>                                            
+                                       </div>
+                                       <p>'.$lang['HOWTOS_'.$i.'_DESC'].'</p>
+                                   </div>
+                               </div>';
+                   $j++;$i++;
+               }
+               $display.='</div>';
+           }
+           $display.='</div>
+           </section>';
+
+   return $display;
+}
+function displaySectionPrice(){
+    Global $lang;
+    
+   $title=$lang['SECTION_PRICE_TITLE'];
+   $subtitle=$lang['SECTION_PRICE_SUBTITLE'];
+   
+   $sectionTitle=SectionTitle($title,$subtitle);
+   
+   $display='<section id="price">
+           <div class="container"> 
+           '.$sectionTitle;
+   
+            $i = 1;
+           While(isset($lang['PRICE_'.$i.'_TITLE'])){
+                $display.='<div class="row">';
+                $j = 1;
+                While($j<=3 && isset($lang['PRICE_'.$i.'_TITLE'])){
+                   $display .='<div class="col-md-12 col-sm-12 col-lg-4 margin-b-30">
+                                   <div class="ico-light ico-lg ico-rounded ico-hover sr-delay-1">
+                                       <div class="text-center">
+                                           <div class="col-4 ml-auto mr-auto">
+                                               <img src="'.$lang['PRICE_'.$i.'_ICON'].'" class="img-fluid" alt="service-img">
+                                           </div> 
+                                           <h4>'.$lang['PRICE_'.$i.'_TITLE'].'</h4>                                            
+                                       </div>
+                                       <p>'.$lang['PRICE_'.$i.'_DESC'].'</p>
+                                   </div>
+                               </div>';
+                   $j++;$i++;
+               }
+               $display.='</div>';
+           }
+           $display.='</div>
+           </section>';
+
+   return $display;
+}
+function displaySectionCallout(){
+    Global $lang;
+    
+    $display ='<!-- CALLOUT -->
+    <section class="theme-color section-xs" id="callout">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-9 theme-color">
+                    <h5 class="fs-25"><strong>'.$lang['SECTION_CALLOUT_TITLE'].'</strong></h5>
+                    <h5>'.$lang['SECTION_CALLOUT_SUBTITLE'].'</h5>
+                </div>
+                <div class="col-md-3 theme-color">
+                    <a href="signup.php" class="btn btn-lg btn-primary wow fadeInUp" data-wow-delay="1s">'.$lang['SIGNUP_TEXT'].'</a>                        
+                    <a href="login.php" class="btn btn-lg btn-primary wow fadeInUp" data-wow-delay="1s">'.$lang['SIGNIN_TEXT'].'</a>
+                </div>
+            </div>            
+        </div>
+    </section>
+     <!-- /CALLOUT -->';
+     /*
+    <div class="divider divider-center divider-short"><i class="fa fa-calendar-o"></i></div>
+    <div class="container">
+        <div class="col">
+            <div class="item-box">
+                <figure>
+                <a class="ico-rounded lightbox" href="images/calendar/calendar_'.$lang['LANGUAGE_ID'].'.jpg" data-plugin-options=\'{"type":"image"}\'>
+                <img class="img-fluid" src="images/calendar/calendar_'.$lang['LANGUAGE_ID'].'.jpg" alt="calendar" />
+                </a>
+                </figure>
+            </div>
+        </div>
+    </div>';
+    */
+
+    return $display;
+}
 function displaySectionCards(){
     Global $lang;
     $title='Cards';
@@ -1236,22 +1721,87 @@ function displaySectionCards(){
         </section>';
     return $display;
 }
-function displaySectionRequests(){
+function displaySectionRequests($user_id){
     Global $lang;
     $title=$lang['SECTION_REQUESTS_TITLE'];
     $subtitle=$lang['SECTION_REQUESTS_SUBTITLE'];
     
     $sectionTitle=SectionTitle($title,$subtitle);
+
+    $freshTickets= new freshdesk();    
+    $tabTickets = $freshTickets->getTicketList($user_id);
+
+    $statusList[2] = 'Open';
+    $statusList[3] = 'Pending';
+    $statusList[4] = 'Resolved';
+    $statusList[5] = 'Closed';
+    $statusList[8] = 'Booked';
+    $statusList[17] = 'Booked';
+    $statusList[19] = 'Cancelled';
     
+    $displayTickets = "<table id='datatable_requests' class='table table-sm table-hover'>
+            <thead>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>";
+
+    foreach ($tabTickets as $key=>$values){
+        if (intval($values['association_type']) < 2){
+            $ticket = array(
+                    'id' => $values['id'],
+                    'user' => $user_id,
+                    'subject' => $values['subject'],
+                    'status' => $values['status']);
+
+            //if ($ticket_id == $values['id']){$ticket_selected = $values['id'];}
+
+            $date = new DateTime($values['created_at']);
+            $date->setTimezone(new DateTimeZone('Asia/Tokyo'));
+            $date_created = $date->format('Y-m-d H:i');
+
+            $subject=$values['subject'];
+            $display_id=$values['id'];
+
+            $status='';
+            if (isset($statusList[$values['status']])){
+                $status = $statusList[$values['status']];
+                if ($statusList[$values['status']] == 'Open' || $statusList[$values['status']] == 'Booked'){
+                    $status = "<span class='badge badge-success'>".$statusList[$values['status']]."</span>";
+                    //$subject= "<th scope='row' >$subject</th>";
+                }
+                elseif ($statusList[$values['status']] == 'Closed' || $statusList[$values['status']] == 'Cancelled' ){
+                    $status = "<small class='text-muted'>".$statusList[$values['status']]."</small>";
+                    //$subject= "<td scope='row' >$subject</td>";
+                }
+                //<h3><span class="badge badge-success">Label</span></h3>
+            }
+            else{
+                $status = $values['status'];
+            }
+            //$jsonTicket = json_encode($ticket,JSON_HEX_APOS);
+            $displayTickets .= "<tr class='odd gradeX' onclick='jaxon_displayTicket(".$values['id'].");return false;'>
+              <td>$display_id</td>
+              <td>$subject</td>
+              <td>$date_created</td>
+              <td>$status</td>
+
+            </tr>";
+        }
+    }
+    $displayTickets .= "</tbody></table>";
+
     $display='<section id="requests" class="pt-100 pb-100">
                 <div class="container">'.$sectionTitle.'
                     <div class="row">
                         <div class="col-md-12">
                                 <div class="panel panel-default">
                                         <div class="panel-heading"><strong></strong></div>
-                                        <div class="panel-body">
-                                            <div id="contentTickets"></div>
-                                        </div>
+                                        <div class="panel-body">'.$displayTickets.'</div>
                                 </div><!-- /panel -->
                         </div><!-- /.col -->
                     </div><!-- /.row -->
@@ -1259,7 +1809,74 @@ function displaySectionRequests(){
             </section>';
     return $display;
 }
+function displaySectionService(){
+    Global $lang;
+    
+    $title=$lang['SECTION_SERVICE_TITLE'];
+    $subtitle=$lang['SECTION_SERVICE_SUBTITLE'];
+    
+    $sectionTitle=SectionTitle($title,$subtitle);
+    
+    $display='<section id="services">
+            <div class="container"> 
+            '.$sectionTitle;
+    
+             $i = 1;
+            While(isset($lang['SERVICE_'.$i.'_TITLE'])){
+                 $display.='<div class="row">';
+                 $j = 1;
+                 While($j<=4){
+                    $display .='<div class="col-md-12 col-sm-12 col-lg-3 margin-b-30">
+                                    <div class="ico-light ico-lg ico-rounded ico-hover sr-delay-1">
+                                        <div class="text-center">
+                                            <div class="col-4 ml-auto mr-auto">
+                                                <img src="'.$lang['SERVICE_'.$i.'_ICON'].'" class="img-fluid" alt="service-img">
+                                            </div> 
+                                            <h4>'.$lang['SERVICE_'.$i.'_TITLE'].'</h4>                                            
+                                        </div>
+                                        <p class="text-center">'.$lang['SERVICE_'.$i.'_DESC'].'</p>
+                                    </div>
+                                </div>';
+                    $j++;$i++;
+                }
+                $display.='</div>';
+            }
+            $display.='</div>
+            </section>';
+ 
+    return $display;
+}
+function displaySectionInfo(){
+    Global $lang;
+    $title = $lang['SECTION_INFO_TITLE'];
+   $subtitle = $lang['SECTION_INFO_DESC'];
+    
+    $sectionTitle=SectionTitle($title,$subtitle);
+    $display='<!-- Info -->
+    <section id="info">
+        <div class="container">
+            
+            <div class="row">
 
+                <div class="col-md-6 col-sm-6">
+                    <img class="img-fluid wow fadeIn" data-wow-delay="0.1s" src="images/info/info1.jpg" alt="" />
+                </div>
+
+                <div class="col-md-6 col-sm-6">
+                    <header class="mb-60">
+                        <h2>'.$lang['SECTION_INFO_TITLE'].'</h2>
+                        <p class="lead font-lato"></p>
+                    </header>
+                    '.$lang['SECTION_INFO_DESC'].'
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+    <!-- /Info -->';
+    return $display;
+}
 function initSignin($codeLang){
     $display="<section id='pricing' class='pricing-wrapper pt-100 pb-70'>
             <div class='container'>
@@ -1362,8 +1979,6 @@ function displayWelcomeEvent($user_id,$Event = FALSE){
     //$(document).ready(function() {$('#myModal').on('shown.bs.modal', function() {$('#myInput').trigger('focus');});});
     return $response;
 }
-
-
 function displaySectionHomeLogged($idLang='jp',$name,$email){
     Global $lang;
     if($GLOBALS['company']['sections']['header_alert']){
@@ -1403,52 +2018,164 @@ function displaySectionHomeLogged($idLang='jp',$name,$email){
                             </div>      
                         </div>
                     </div>';
-        /*
-         $display='
-                    <div class="mr-auto ml-auto mb-10 mt-10">
-                        <div class="box-static box-border-top p-30">
-                            <div style="width: 100%; height: 500px; position: relative; overflow: hidden;">
-                                <iframe width="100%" height="100%" frameborder="0" src="'.$bot_url.'"></iframe>
-                            </div>                             
-                        </div>
-                    </div>';
-         * 
-         */
-
+        $section = $sectionStart.$display.$sectionEnd;
     }
-    else{
-         $display = '<div class="text-center col-lg-10 mr-auto ml-auto mb-20 mt-10">
+    elseif(!empty($lang['SECTION_HOME_LOGGED'])){
+        $display = '<div class="text-center col-lg-10 mr-auto ml-auto mb-20 mt-10">
                     <h5 class="lead fw-300 wow fadeInUp" data-wow-delay="0.7s">'.$lang['SECTION_HOME_LOGGED'].'</h5>
                 </div>';
         
-        
+        $section = $sectionStart.$display.$sectionEnd;
+    }
+    else{
+        $section = '<section class="section-xs"></section>';
     }
     
-    $section = $sectionStart.$display.$sectionEnd;
     return $section;
 }
-
 function displaySectionHomeUnLogged($idLang='jp'){
-    Global $lang;   
-    //<img class="img-fluid wow fadeInUp" data-wow-delay="0.4s"src="'.$GLOBALS['company']['picture'].'" alt="">
-    $sectionStart = '<section class="theme-color  mt-50">
+    Global $lang;   Global $company;
+
+    switch ($company['id']) {
+        case '35001064691':
+            $section = '<section id="slider" class="fullheight">
+            <div class="swiper-container" data-effect="slide" data-autoplay="5000">
+                <div class="swiper-wrapper">
+
+                    <!-- SLIDE 1 -->
+                    <div class="swiper-slide" style="background-image: url(\'images/welcome/welcome1.jpg\');">
+                        <div class="overlay dark-1"><!-- dark overlay [1 to 9 opacity] --></div>                        
                         <div class="display-table">
-                           <div class="display-table-cell vertical-align-middle">
-                               <div class="container text-center">';
-    $sectionEnd = '</div>
+                            <div class="display-table-cell vertical-align-middle">
+                                <div class="container">
+
+                                    <div class="row">
+                                        <div class="text-center col-md-8 col-12 offset-md-2">
+
+                                            <h1 class="bold wow fadeInUp" data-wow-delay="0.4s"><span class="text-white">'.$lang['SECTION_HOME_TITLE'].'</span></h1>
+                                            <p class="lead fw-300 hidden-xs-down wow fadeInUp" data-wow-delay="0.6s"><span class="text-white">'.$lang['SECTION_HOME_BODY'].'</span></p>                                            
+                                            <a href="signup.php" class="btn btn-lg btn-primary wow fadeIn" data-wow-delay="1s">'.$lang['SIGNUP_TEXT'].'</a>                        
+                                            <a href="login.php" class="btn btn-lg btn-primary wow fadeIn" data-wow-delay="1s">'.$lang['SIGNIN_TEXT'].'</a>
+
+                                        </div>
+                                    </div>
+                        
+                                </div>
+                            </div>
+                        </div>                        
+                    </div>
+                    <!-- /SLIDE 1 -->
+
+                    <!-- SLIDE 2 -->
+                    <div class="swiper-slide" style="background-image: url(\'images/welcome/welcome2.jpg\');">
+                        <div class="overlay dark-2"><!-- dark overlay [1 to 9 opacity] --></div>                        
+                        <div class="display-table">
+                            <div class="display-table-cell vertical-align-middle">
+                                <div class="container">
+
+                                    <div class="row">
+                                        <div class="text-center col-md-8 col-12 offset-md-2">
+
+                                            <h1 class="bold font-raleway wow fadeInUp" data-wow-delay="0.4s"><span class="text-white">'.$lang['SECTION_HOME_TITLE2'].'</span></h1>
+                                            <p class="lead font-lato fw-300 hidden-xs-down wow fadeInUp" data-wow-delay="0.6s"><span class="text-white">'.$lang['SECTION_HOME_BODY2'].'</span></p>                                            
+                                            <a href="signup.php" class="btn btn-lg btn-primary wow fadeIn" data-wow-delay="1s">'.$lang['SIGNUP_TEXT'].'</a>                        
+                                            <a href="login.php" class="btn btn-lg btn-primary wow fadeIn" data-wow-delay="1s">'.$lang['SIGNIN_TEXT'].'</a>
+
+                                        </div>
+                                    </div>
+                        
+                                </div>
+                            </div>
+                        </div>                        
+                    </div>
+                    <!-- /SLIDE 2 -->
+
+                    <!-- SLIDE 3 -->
+                    <div class="swiper-slide" style="background-image: url(\'images/welcome/welcome3.jpg\');">
+                        <div class="overlay dark-0"><!-- dark overlay [1 to 9 opacity] --></div>                        
+                        <div class="display-table">
+                            <div class="display-table-cell vertical-align-middle">
+                                <div class="container">
+
+                                    <div class="row">
+                                        <div class="text-center col-md-8 col-12 offset-md-2">
+
+                                            <h1 class="bold font-raleway wow fadeInUp" data-wow-delay="0.4s"><span class="text-white">'.$lang['SECTION_HOME_TITLE3'].'</span></h1>
+                                            <p class="lead font-lato fw-300 hidden-xs-down wow fadeInUp" data-wow-delay="0.6s"><span class="text-white">'.$lang['SECTION_HOME_BODY3'].'</span></p>                                            
+                                            <a href="signup.php" class="btn btn-lg btn-primary wow fadeIn" data-wow-delay="1s">'.$lang['SIGNUP_TEXT'].'</a>                        
+                                            <a href="login.php" class="btn btn-lg btn-primary wow fadeIn" data-wow-delay="1s">'.$lang['SIGNIN_TEXT'].'</a>
+
+                                        </div>
+                                    </div>
+                        
+                                </div>
+                            </div>
+                        </div>                        
+                    </div>
+                    <!-- /SLIDE 3 -->                    
                 </div>
+                <!-- Swiper Pagination -->
+                <div class="swiper-pagination"></div>
+
+                <!-- Swiper Arrows -->
+                <div class="swiper-button-next"><i class="fa fa-angle-right"></i></div>
+                <div class="swiper-button-prev"><i class="fa fa-angle-left"></i></div>                
             </div>
-     </section>';
-    
-    $display = '<div class="text-center col-lg-8 mr-auto ml-auto mb-20 mt-10">
-                    <h5 class="lead fw-300 wow fadeInUp" data-wow-delay="0.7s">'.$lang['SECTION_HOME_TITLE'].'</h5>
+					
+			</section>
+			<!-- /SLIDER -->';
+        break;
+        case '0000000':
+            //Wellness
+            $section = '<section id="slider" class="fullheight">
+            <div class="swiper-container" data-effect="slide" data-autoplay="5000">
+                <div class="swiper-wrapper">
+
+                    <!-- SLIDE 1 -->
+                    <div class="swiper-slide" style="background-image: url(\'images/welcome/welcomewellness.jpg\');">
+                        <div class="overlay dark-1"><!-- dark overlay [1 to 9 opacity] --></div>                        
+                        <div class="display-table">
+                            <div class="display-table-cell vertical-align-middle">
+                                <div class="container">
+                                    
+                        
+                                </div>
+                            </div>
+                        </div>                        
+                    </div>
+                    <!-- /SLIDE 1 -->                              
                 </div>
-                <div class="mt-30">
-                        <a href="signup.php" class="btn btn-lg btn-primary wow fadeInUp" data-wow-delay="1s">'.$lang['SIGNUP_TEXT'].'</a>                        
-                        <a href="login.php" class="btn btn-lg btn-primary wow fadeInUp" data-wow-delay="1s">'.$lang['SIGNIN_TEXT'].'</a>
-                </div>';
-    
-    $section = $sectionStart.$display.$sectionEnd;
+                <!-- Swiper Pagination -->
+                <div class="swiper-pagination"></div>
+
+                <!-- Swiper Arrows -->
+                <div class="swiper-button-next"><i class="fa fa-angle-right"></i></div>
+                <div class="swiper-button-prev"><i class="fa fa-angle-left"></i></div>                
+            </div>
+					
+			</section>
+			<!-- /SLIDER -->';
+        break;
+        default:
+            $sectionStart = '<section class="theme-color  mt-50">
+                                <div class="display-table">
+                                    <div class="display-table-cell vertical-align-middle">
+                                        <div class="container text-center">';
+            $sectionEnd = '</div>
+                        </div>
+                    </div>
+                </section>';
+
+            $display = '<div class="text-center col-lg-8 mr-auto ml-auto mb-20 mt-10">
+                            <h5 class="lead fw-300 wow fadeInUp" data-wow-delay="0.7s">'.$lang['SECTION_HOME_TITLE'].'</h5>
+                        </div>
+                        <div class="mt-30">
+                                <a href="signup.php" class="btn btn-lg btn-primary wow fadeInUp" data-wow-delay="1s">'.$lang['SIGNUP_TEXT'].'</a>                        
+                                <a href="login.php" class="btn btn-lg btn-primary wow fadeInUp" data-wow-delay="1s">'.$lang['SIGNIN_TEXT'].'</a>
+                        </div>';
+            $section = $sectionStart.$display.$sectionEnd;
+        break;
+    }
     return $section;
 }
 function displaySectionHomeSoon(){
@@ -1469,7 +2196,6 @@ function displaySectionHomeSoon(){
     $section = $sectionStart.$display.$sectionEnd;
     return $section;
 }
-
 function displaySectionHomeRequestForm($uid){
     Global $lang;
     $title=$lang['REQUEST_FORM_TITLE'];
@@ -1526,7 +2252,6 @@ function displaySectionHomeRequestForm($uid){
     $section = $sectionStart.$display.$sectionEnd;
     return $section;
 }
-
 function displaySectionHomeRequestFormEnhanced($uid){
     Global $lang;
     $title=$lang['REQUEST_FORM_TITLE'];
@@ -1603,7 +2328,6 @@ function displaySectionHomeRequestFormEnhanced($uid){
     $section = $sectionStart.$display.$sectionEnd;
     return $section;
 }
-
 function displayRequestFormType($type,$uid){
     Global $lang;
 
@@ -1716,7 +2440,7 @@ function displayRequestFormType($type,$uid){
             break;
     default:
         break;
-}
+    }
     $display = $customForm;
      $display .= '
                <div class="form-group">             
@@ -1729,7 +2453,6 @@ function displayRequestFormType($type,$uid){
     $response->assign('contentByType', 'innerHTML', $display);
     return $response;
 }
-
 function addGuestToList($ticketForm){
     
     $display ='KO';

@@ -9,70 +9,152 @@ $sections = array('header_alert' => FALSE,
                     'blog' => TRUE,
                     'about' => FALSE,
                     'event' => TRUE,
+                    'eventpayment' => FALSE,
+                    'eventdirect' => FALSE,
                     'news' => TRUE,
-                    'example' => TRUE,
+                    'example' => FALSE,
                     'team' => TRUE,
                     'faq' => TRUE,
                     'card' => FALSE,
+                    'service' => FALSE,
+                    'programs' => FALSE,
+                    'privates' => FALSE,
+                    'howto_signup' => FALSE,
+                    'price' => FALSE,
+                    'info' => FALSE,
+                    'callout' => FALSE,
                     'account' => TRUE);
 
 $sections['event_items'] = 6;
+/* PPE */
+$confStripe['subscription_id'] = '';
+$confStripe['tax'] = 'txr_1HFyNPL40IwoyLhvy5Q8DzK0'; 
+$confStripe['stripe_webhook_secret'] = 'whsec_64KrbfLkBgPZkENaUw4tL40Np9YO52Aw';
+$confStripe['stripe_secret_key'] = 'sk_test_51HFY5oL40IwoyLhvrrRG2Mha8EAOcclubE4qHrxQSMrxZJanSTf8Wqrob0xV5LKJzbvcCzgGkSVvd9UzCYsR0DpX00w2JKR8zk';
+$confStripe['stripe_publishable_key'] = 'pk_test_51HFY5oL40IwoyLhvaIp7j1UJ0GUMcBtRH9K73rpatmnTAV2s7px2lOTHXNOLR6v3i1MavrTN0B441hsqtuDfVrH80007rMyKPL';
 
-//Setup Company config
-//$ipuu=$_SERVER['REMOTE_ADDR'];
+/* Prod */
+$confStripe['subscription_id'] = '';
+$confStripe['tax'] = 'txr_1HFYFvL40IwoyLhvSWLmySUA';
+$confStripe['stripe_webhook_secret'] = 'whsec_64KrbfLkBgPZkENaUw4tL40Np9YO52Aw';
+$confStripe['stripe_secret_key'] = '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';
+$confStripe['stripe_publishable_key'] = 'pk_live_51HFY5oL40IwoyLhvxtNrmBwbiWIQnb9V5oOwQMq3flOWFzkRuXAq3rnRtfcHh687C2zHAzyFZpwGa1iNHprxIEpE00hcBIfzkH';
+
+$confStripe['stripe_trial_days'] = 10;
 
 switch ($_SERVER['SERVER_NAME']) {
-
-    case "dentsu.yourconcierge.jp":
-        //$sections['header_alert'] = TRUE;
-        $company = array ('id' =>'35000511390','tracking_id' =>'UA-132838601-1', 'domain'=>'@dentsu.co.jp', 'lib' =>'Dentsu', 'unlogged_access' =>TRUE,
+    case "card.yourconcierge.jp":
+        $company = array ('id' =>'000000000','tracking_id' =>FALSE, 'domain'=>'', 'lib' =>'Card', 'unlogged_access' =>FALSE,
             'walk_in'=>FALSE, 'email_customize' => FALSE, 'FAQ' => FALSE,
             'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
-            'redirect'=>FALSE,
+            'redirect'=>TRUE,
             'request_form'=> TRUE,
-            'ip_restriction'=> FALSE,
+            'ip_restriction'=> array('000.000.000.0000'),
             'language' => 'multi',
-            'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
+            'privacy_doc' => 'privacy_information.pdf',
             'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
             't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
             'event' => FALSE,
-            'report' => TRUE,
-            'sections' => $sections);
-    break;
-    case "the-premier-floor-marunouchi.yourconcierge.jp":
-        $sections['faq'] = TRUE;
-        $theme_color = "green";
-        $company = array ('id' =>'35000894238','tracking_id' => FALSE, 'domain'=>'tenant', 'lib' =>'Mitsubishi Estate', 'unlogged_access' =>TRUE,
-            'walk_in'=>TRUE, 'email_customize' => FALSE,'FAQ' => TRUE,
-            'logo'=>'images/yc_logo_nav_green.png', 'picture'=>'images/yc_logo_welcome.png',
-            'request_form'=> TRUE,
-            'redirect'=>FALSE,
-            'ip_restriction'=> FALSE,
-            'language' => 'multi',
-            'privacy_doc' => '2019523_Privacy Policy_TPO.pdf',
-            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
-            't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
-            'event' => FALSE,
+            'report' => FALSE,
             'sections' => $sections);
         break;
-
     case "events.yourconcierge.jp":
         $sections['faq'] = FALSE;
-        $sections['team'] = FALSE;
         $sections['how_to'] = FALSE;
         $sections['example'] = FALSE;
         $sections['event_items'] = 9;
         
-        $company = array ('id' =>'35001046233','tracking_id' => FALSE, 'domain'=>'tenant', 'lib' =>'Evants', 'unlogged_access' =>TRUE,
+        $company = array ('id' =>'35001046233','tracking_id' => 'UA-132838601-3', 'domain'=>'tenant', 'lib' =>'Evants', 'unlogged_access' =>TRUE,
             'walk_in'=>TRUE, 'email_customize' => TRUE,'FAQ' => TRUE,
             'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
             'request_form'=> FALSE,
             'redirect'=>FALSE,
+            'membership_check' => TRUE,
             'ip_restriction'=> FALSE,
             'language' => 'multi',
             'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
             'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
             't&c_doc' => FALSE,
+            'event' => FALSE,
+            'sections' => $sections);
+        break;
+    case "family.yourconcierge.jp":
+        $sections['price'] = TRUE;
+        $sections['how_to'] = FALSE;
+        $sections['howto_signup'] = TRUE;
+        $sections['price'] = TRUE;
+        /*PPE
+        $confStripe['tax'] = 'txr_1GkqSGG4hsAX9JOaRJThGeyJ';
+        $confStripe['stripe_webhook_secret'] = 'whsec_HLEUWtKCNfkVmWtWOcuPQrxoMA9FaxKc';
+        $confStripe['stripe_secret_key'] = 'sk_test_JCFMm2hG1jaMA9NB9x3xwVJV00eZVd93LR';
+        $confStripe['stripe_publishable_key'] = 'pk_test_X9O8pOQFk5EnLjpb3co8SFHa00CHCOsjot';
+        */
+        /*PROD*/
+        $confStripe['subscription_id'] = 'price_HKyhMNkgCoxdYB';
+        $confStripe['tax'] = 'txr_1GmkX5G4hsAX9JOads76b71m';
+        $confStripe['stripe_webhook_secret'] = 'whsec_Cz1ladhzMVCAhMEo7v7qrOWaF9w705wR';
+        $confStripe['stripe_secret_key'] = 'sk_live_A3kuYIUDuN1MmsvVJOmcSJsu00udipMvOZ';
+        $confStripe['stripe_publishable_key'] = 'pk_live_ng1A9ft2TK4mmoQKIXgKgXU900wpHaHaI8';
+        
+        $company = array ('id' =>'35001026668',
+            'tracking_id' =>FALSE, 
+            'domain'=>'*', 
+            'lib' =>'Family', 
+            'unlogged_access' =>TRUE,
+            'walk_in'=>FALSE, 
+            'email_customize' => FALSE,
+            'sponsorship_request' => TRUE,
+            'FAQ' => FALSE,
+            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
+            'redirect'=>FALSE,
+            'request_form'=> TRUE,
+            'ip_restriction'=> FALSE,
+            'language' => 'multi',
+            'subscription_id' => $confStripe['subscription_id'],
+            'signup_subscription'  => TRUE,
+            'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
+            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+            't&c_doc' => '(Family)Teams of Service 2020.05_.pdf',
+            'event' => FALSE,
+            'report' => TRUE,
+            'sections' => $sections,
+            'stripe' => $confStripe);
+
+        break;
+    
+    case "human-first.yourconcierge.jp":
+        $company = ['id' =>'35001288223',
+            'tracking_id' => FALSE,
+            'domain'=>'*',
+            'lib' =>'Human First',
+            'unlogged_access' =>TRUE,
+            'membership_check' => TRUE,
+            'walk_in'=>TRUE,
+            'email_customize' => FALSE,
+            'FAQ' => TRUE,
+            'logo'=>'images/hf_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
+            'request_form'=> TRUE,
+            'redirect'=>FALSE,
+            'ip_restriction'=> FALSE,
+            'language' => 'multi',
+            'privacy_doc' => '(YourConcierge)Privacy Policy_2021.pdf',
+            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+            't&c_doc' => '(YourConcierge)Teams of Service 2020.02.pdf',
+            'event' => FALSE,
+            'sections' => $sections];
+        break;
+    case "imbesideyou.yourconcierge.jp":
+        $sections['event'] = FALSE;
+        $company = array ('id' =>'35001340541','tracking_id' => FALSE, 'domain'=>'@tpo', 'lib' =>'TPO', 'unlogged_access' =>TRUE,
+            'walk_in'=>FALSE, 'email_customize' => FALSE, 'FAQ' => TRUE,
+            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',    
+            'redirect'=>FALSE,
+            'request_form'=> FALSE,
+            'ip_restriction'=> FALSE,
+            'language' => 'multi',
+            'privacy_doc' => '(YourConcierge)Privacy Policy_2021.pdf',
+            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+            't&c_doc' => '(YourConcierge)Teams of Service 2020.02 .pdf',
             'event' => FALSE,
             'sections' => $sections);
         break;
@@ -91,132 +173,158 @@ switch ($_SERVER['SERVER_NAME']) {
             'redirect'=>FALSE,
             'ip_restriction'=> FALSE,
             'language' => 'multi',
-            'privacy_doc' => '2019523_Privacy Policy_TPO.pdf',
-            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+            'privacy_doc' => '[YourConcierge]Privacy Policy_2019.05.pdf',
+            'privacy_tpo' => '[TPO]Privacy Policy_2019.04.pdf',
             't&c_doc' => '[YourConcierge]Teams of Service 2020.04_mot. member lounge.pdf',
             'event' => FALSE,
             'select_tenant_option' => TRUE,
             'sections' => $sections];
         break;
+    case "myaccount.yourconcierge.jp":
+        foreach($sections as $key=>$value){ $sections[$key] = FALSE;}
+        $sections['service'] = TRUE;
+        $sections['programs'] = TRUE;
+        $sections['privates'] = TRUE;
+        $sections['howto_signup'] = TRUE;
+        $sections['price'] = TRUE;
+        $sections['info'] = TRUE;
+        $sections['callout'] = TRUE;
+        $sections['eventpayment'] = TRUE;
+        $sections['event_items'] = 9;
+       
+        /*PPE
+        $confStripe['subscription_id'] = 'andyou';
+        //$confStripe['subscription_id'] = 'plan_H13OERHhFnQddF';
+        $confStripe['tax'] = 'txr_1GkQjTF8FRDOm1FXDfgNGcwP';
+        $confStripe['stripe_webhook_secret'] = 'whsec_HLEUWtKCNfkVmWtWOcuPQrxoMA9FaxKc';
+        $confStripe['stripe_secret_key'] = 'sk_test_9C3GL67VSuLJ8Dk4BI4qow3E00TKDgz6lE';
+        $confStripe['stripe_publishable_key'] = 'pk_test_oXCuS6nq1rlXbHHxZDtgswm100lI7l2PhA';
+        */
+        /* Prod */
+        $confStripe['subscription_id'] = 'price_1HzGV1F8FRDOm1FXESUcbSaw';
+        $confStripe['tax'] = 'txr_1GSCfYF8FRDOm1FXJ7TSf3k7';
+        $confStripe['stripe_webhook_secret'] = 'whsec_64KrbfLkBgPZkENaUw4tL40Np9YO52Aw';
+        $confStripe['stripe_secret_key'] = 'sk_live_891tkIgyc5hiu2YJz74UgoZo00YkGnPGWH';
+        $confStripe['stripe_publishable_key'] = 'pk_live_S3qCblnxqhtrRSxLiVjLWvkc00qJocgMDl';
 
-    case "family.yourconcierge.jp":
-        $sections['event'] = FALSE;
-        //'subscription_id' => 'plan_Gwx5ElAFg1eJeQ',
-        //'subscription_id' => 'family1',
-        $company = array ('id' =>'35001026668','tracking_id' =>FALSE, 'domain'=>'*', 'lib' =>'Family', 'unlogged_access' =>TRUE,
-            'walk_in'=>TRUE, 'email_customize' => FALSE, 'FAQ' => FALSE,
-            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
+        $confStripe['stripe_trial_days'] = 10;
+        
+        $company = array ('id' =>'35001064691',
+            'tracking_id' =>'UA-132838601-4', 
+            'domain'=>'*',
+            'lib' =>'myaccount',
+            'unlogged_access' =>TRUE,
+            'walk_in'=>TRUE,
+            'email_customize' => FALSE,
+            'FAQ' => FALSE,
+            'logo'=>'images/logo/&You-logo.png',
             'redirect'=>FALSE,
-            'request_form'=> TRUE,
+            'request_form'=> FALSE,
+            'init_bot' =>TRUE,
             'ip_restriction'=> FALSE,
             'language' => 'multi',
-            'subscription_id' => 'plan_Gwx5ElAFg1eJeQ',            
+            'subscription_id' => $confStripe['subscription_id'],
+            'event_subscription' => TRUE,
+            'privacy_doc' => '(YourConcierge)Privacy Policy_2021.pdf',
+            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+            't&c_doc' => '[& You]Teams of Service 2020.05_.pdf',
+            'event' => FALSE,
+            'report' => TRUE,
+            'sections' => $sections,
+            'stripe' => $confStripe);
+        break;
+    case "next.yourconcierge.jp":
+        $company = array ('id' =>'35058707451','tracking_id' => FALSE, 'domain'=>'@tpo', 'lib' =>'Sky Premium', 'unlogged_access' =>TRUE,
+            'walk_in'=>TRUE, 'email_customize' => FALSE, 'FAQ' => TRUE,
+            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',    
+            'redirect'=>FALSE,
+            'request_form'=> FALSE,
+            'ip_restriction'=> FALSE,
+            'language' => 'multi',
+            'privacy_doc' => '(YourConcierge)Privacy Policy_2021.pdf',
+            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+            't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
+            'event' => FALSE,
+            'sections' => $sections);
+        break;
+    case "nttdata.yourconcierge.jp":
+        $sections['event'] = FALSE;
+        $sections['faq'] = TRUE;
+        $sections['example'] = FALSE;
+        $company = array ('id' =>'35000564654','tracking_id' => FALSE, 'domain'=>'@nttdata.co.jp', 'lib' =>'NTT Data', 'unlogged_access' =>TRUE,
+        'walk_in'=>FALSE, 'email_customize' => FALSE, 'FAQ' => TRUE,
+        'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/NTT_index.jpg',
+        'redirect'=>FALSE,
+        'ip_restriction'=> FALSE,
+        'request_form'=> FALSE,'SignUp_lite'=> TRUE,
+        'language' => 'jp',
+        'privacy_doc' => FALSE,
+        'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+        't&c_doc' => 'コーポレートコンシェルジュサービス利用条件書_201910.pdf',
+        'event' => FALSE,
+        'sections' => $sections);
+        break;
+    case "ocatokyo.yourconcierge.jp":
+        $sections['event'] = FALSE;
+        $company = ['id' =>'35001238370',
+        'tracking_id' => FALSE,
+        'domain'=>'*',
+        'lib' =>'OCA TOKYO',
+        'unlogged_access' =>TRUE,
+        'membership_check' => TRUE,
+        'walk_in'=>TRUE,
+        'email_customize' => FALSE,
+        'FAQ' => TRUE,
+        'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
+        'request_form'=> TRUE,
+        'redirect'=>FALSE,
+        'ip_restriction'=> FALSE,
+        'language' => 'multi',
+        'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
+        'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+        't&c_doc' => 'OCA_Service Policy_210629.pdf', 
+        'event' => FALSE,
+        'sections' => $sections];
+        break;  
+   
+    case "ppe.yourconcierge.jp":
+        //$sections['header_alert'] = TRUE;
+        $company = array ('id' =>'35000511390','tracking_id' =>'UA-132838601-1', 'domain'=>'@dentsu.co.jp', 'lib' =>'Dentsu', 'unlogged_access' =>TRUE,
+            'walk_in'=>FALSE,
+            'sponsorship_request' => TRUE, 
+            'email_customize' => FALSE, 'FAQ' => FALSE,
+            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
+            'redirect'=>FALSE,
+            'request_form' => TRUE,
+            'init_bot' => TRUE,
+            'ip_restriction'=> FALSE,
+            'language' => 'multi',
             'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
             'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
             't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
             'event' => FALSE,
             'report' => TRUE,
             'sections' => $sections);
-    break;
+        break;
 
-    case "robertwalters.yourconcierge.jp":
+    case "the-premier-floor-marunouchi.yourconcierge.jp":
         $sections['faq'] = TRUE;
-        $company = array ('id' =>'35001009865','tracking_id' => FALSE, 'domain'=>'@robertwalters.co.jp', 'lib' =>'RObert Walters', 'unlogged_access' =>TRUE,
-            'walk_in'=>FALSE, 'email_customize' => FALSE, 'FAQ' => TRUE,
-            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
-            'redirect'=>FALSE,
+        $theme_color = "green";
+        $company = array ('id' =>'35000894238','tracking_id' => FALSE, 'domain'=>'tenant', 'lib' =>'Mitsubishi Estate', 'unlogged_access' =>TRUE,
+            'walk_in'=>TRUE, 'email_customize' => FALSE,'FAQ' => TRUE,
+            'logo'=>'images/yc_logo_nav_green.png', 'picture'=>'images/yc_logo_welcome.png',
             'request_form'=> TRUE,
+            'redirect'=>FALSE,
             'ip_restriction'=> FALSE,
             'language' => 'multi',
-            'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
-            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
-            't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
-            'event' => FALSE,
-            'sections' => $sections);
-        break;
-    case "bcg.yourconcierge.jp":
-        $sections['faq'] = TRUE;
-        $company = array ('id' =>'35001025704','tracking_id' => FALSE, 'domain'=>'@bcg.com', 'lib' =>'BCG', 'unlogged_access' =>TRUE,
-            'walk_in'=>FALSE, 'email_customize' => FALSE, 'FAQ' => TRUE,
-            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
-            'redirect'=>FALSE,
-            'request_form'=> TRUE,
-            'ip_restriction'=> FALSE,
-            'language' => 'multi',
-            'privacy_doc' => '(YourConcierge)Privacy Policy_BCG_2020.02.pdf',
-            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
-            't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
-            'event' => FALSE,
-            'sections' => $sections);
-        break;
-case "ppe.yourconcierge.jp":    
-    case "paypay.yourconcierge.jp":
-        foreach ($sections as $key => $value) { $sections[$key] = FALSE; }
-        
-        $sections['faq'] = TRUE;
-        $sections['how_to'] = FALSE;
-        $sections['example'] = FALSE;
-        $company = array ('id' =>'35001056421','tracking_id' => FALSE, 'domain'=>'paypay-corp.co.jp', 'lib' =>'Paypay', 'unlogged_access' =>TRUE,
-            'walk_in'=>TRUE, 'email_customize' => FALSE, 'FAQ' => TRUE,
-            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
-            'redirect'=>FALSE,
-            'request_form'=> TRUE,
-            'ip_restriction'=> FALSE,
-            'language' => 'multi',
-            'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
+            'privacy_doc' => '(YourConcierge)Privacy Policy_2021.pdf',
             'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
             't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
             'event' => FALSE,
             'sections' => $sections);
         break;
     
-    case "cartier.yourconcierge.jp":
-        $company = array ('id' =>'35000657203','tracking_id' =>'UA-132838601-2', 'domain'=>'@cartier.com', 'lib' =>'Cartier', 'unlogged_access' =>TRUE,
-            'walk_in'=>FALSE, 'email_customize' => FALSE, 'FAQ' => TRUE,
-            'logo'=>'images/cartier_logo_nav.png', 'picture'=>'images/cartier_logo_welcome.png',    
-            'redirect'=>TRUE,
-            'request_form'=> TRUE,
-            'ip_restriction'=> FALSE,
-            'language' => 'multi',
-            'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
-            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
-            't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
-            'event' => FALSE,
-            'sections' => $sections);
-        break;
-
-    case "nttdata.yourconcierge.jp":
-            $sections['event'] = FALSE;
-            $sections['faq'] = TRUE;
-            $sections['example'] = FALSE;
-            $company = array ('id' =>'35000564654','tracking_id' => FALSE, 'domain'=>'@nttdata.co.jp', 'lib' =>'NTT Data', 'unlogged_access' =>TRUE,
-            'walk_in'=>FALSE, 'email_customize' => FALSE, 'FAQ' => TRUE,
-            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/NTT_index.jpg',
-            'redirect'=>FALSE,
-            'ip_restriction'=> FALSE,
-            'request_form'=> FALSE,'SignUp_lite'=> TRUE,
-            'language' => 'jp',
-            'privacy_doc' => FALSE,
-            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
-            't&c_doc' => 'コーポレートコンシェルジュサービス利用条件書_201910.pdf',
-            'event' => FALSE,
-            'sections' => $sections);
-        break;
-    case "ssu.yourconcierge.jp":
-        $company = array ('id' =>'35000516944','tracking_id' => FALSE, 'domain'=>'*', 'lib' =>'Sunny Side Up', 'unlogged_access' =>FALSE,
-            'walk_in'=>FALSE, 'email_customize' => FALSE,'FAQ' => FALSE,
-            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/SSUportal.jpeg',
-            'redirect'=>TRUE,
-            'request_form'=> TRUE,
-            'ip_restriction'=> FALSE,
-            'language' => 'multi',
-            'privacy_doc' => '2019.2.5_TPO_Handling_Personal_Information.pdf',
-            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
-            't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
-            'event' => FALSE,
-            'sections' => $sections);
-        break;
- 
+    
     case "tpo.yourconcierge.jp":
         $sections['contact'] = FALSE;
         $company = array ('id' =>'35000695111','tracking_id' => FALSE, 'domain'=>'@', 'lib' =>'TPO', 'unlogged_access' =>TRUE,
@@ -232,36 +340,119 @@ case "ppe.yourconcierge.jp":
             'event' => FALSE,
             'sections' => $sections);
         break;
-    case "next.yourconcierge.jp":
-       $company = array ('id' =>'35000131126','tracking_id' => FALSE, 'domain'=>'@tpo', 'lib' =>'TPO', 'unlogged_access' =>TRUE,
-           'walk_in'=>TRUE, 'email_customize' => FALSE, 'FAQ' => TRUE,
-           'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',    
-           'redirect'=>FALSE,
-           'request_form'=> FALSE,
-           'ip_restriction'=> FALSE,
-           'language' => 'multi',
-           'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
-           'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
-           't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
-           'event' => FALSE,
-           'sections' => $sections);
-       break; 
-    case "card.yourconcierge.jp":
-        $company = array ('id' =>'000000000','tracking_id' =>FALSE, 'domain'=>'', 'lib' =>'Card', 'unlogged_access' =>FALSE,
-            'walk_in'=>FALSE, 'email_customize' => FALSE, 'FAQ' => FALSE,
-            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
-            'redirect'=>TRUE,
-            'request_form'=> TRUE,
-            'ip_restriction'=> array('000.000.000.0000'),
+    
+    
+    case "wellness.yourconcierge.jp":
+        foreach($sections as $key=>$value){ $sections[$key] = FALSE;}
+        $sections['eventdirect'] = TRUE;
+        $sections['contact'] = TRUE;
+        
+        $company = array ('id' =>'35001261629',
+            'tracking_id' =>FALSE, 
+            'domain'=>'tenant',
+            'lib' =>'myaccount',
+            'unlogged_access' =>TRUE,
+            'walk_in'=>TRUE,
+            'email_customize' => FALSE,
+            'FAQ' => FALSE,
+            'logo'=>'images/yc_logo_nav.png',
+            'redirect'=>FALSE,
+            'request_form'=> FALSE,
+            'init_bot' => TRUE,
+            'ip_restriction'=> FALSE,
             'language' => 'multi',
-            'privacy_doc' => 'privacy_information.pdf',
+            'event_subscription' => FALSE,
+            'privacy_doc' => '(YourConcierge)Privacy Policy_2021.pdf',
+            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+            't&c_doc' => '(Wellness)Teams of Service 2020.11_.pdf',
+            'event' => FALSE,
+            'report' => TRUE,
+            'sections' => $sections);
+        break;
+    
+   
+   
+    
+    //closed:
+    case "bcg.yourconcierge.jp":
+        $sections['faq'] = TRUE;
+        $company = array ('id' =>'35001025704','tracking_id' => FALSE, 'domain'=>'@bcg.com', 'lib' =>'BCG', 'unlogged_access' =>TRUE,
+            'walk_in'=>FALSE, 'email_customize' => FALSE, 'FAQ' => TRUE,
+            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
+            'redirect'=>FALSE,
+            'request_form'=> TRUE,
+            'ip_restriction'=> FALSE,
+            'language' => 'multi',
+            'privacy_doc' => '(YourConcierge)Privacy Policy_BCG_2020.02.pdf',
             'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
             't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
             'event' => FALSE,
-            'report' => FALSE,
             'sections' => $sections);
         break;
-    //closed:
+    case "cartier.yourconcierge.jp":
+        $company = array ('id' =>'35000657203','tracking_id' =>'UA-132838601-2', 'domain'=>'@cartier.com', 'lib' =>'Cartier', 'unlogged_access' =>TRUE,
+            'walk_in'=>FALSE, 'email_customize' => FALSE, 'FAQ' => TRUE,
+            'logo'=>'images/cartier_logo_nav.png', 'picture'=>'images/cartier_logo_welcome.png',    
+            'redirect'=>TRUE,
+            'request_form'=> TRUE,
+            'ip_restriction'=> FALSE,
+            'language' => 'multi',
+            'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
+            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+            't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
+            'event' => FALSE,
+            'sections' => $sections);
+        break;
+    case "kke.yourconcierge.jp":
+        $company = array ('id' =>'35001256115','tracking_id' => FALSE, 'domain'=>'@tpo', 'lib' =>'TPO', 'unlogged_access' =>TRUE,
+            'walk_in'=>FALSE, 'email_customize' => FALSE, 'FAQ' => TRUE,
+            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',    
+            'redirect'=>TRUE,
+            'request_form'=> FALSE,
+            'ip_restriction'=> FALSE,
+            'language' => 'multi',
+            'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
+            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+            't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
+            'event' => FALSE,
+            'sections' => $sections);
+        break;
+    case "dentsu.yourconcierge.jp":
+        //$sections['header_alert'] = TRUE;
+        $company = array ('id' =>'35000511390','tracking_id' =>'UA-132838601-1', 'domain'=>'@dentsu.co.jp', 'lib' =>'Dentsu', 'unlogged_access' =>TRUE,
+            'walk_in'=>FALSE,
+            'sponsorship_request' => TRUE, 
+            'email_customize' => FALSE, 'FAQ' => FALSE,
+            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
+            'redirect'=>TRUE,
+            'request_form'=> FALSE,
+            'ip_restriction'=> FALSE,
+            'language' => 'multi',
+            'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
+            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+            't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
+            'event' => FALSE,
+            'report' => TRUE,
+            'sections' => $sections);
+        break;
+    case "paypay.yourconcierge.jp":
+        
+        $sections['faq'] = TRUE;
+        $sections['how_to'] = FALSE;
+        $sections['example'] = FALSE;
+        $company = array ('id' =>'35001056421','tracking_id' => FALSE, 'domain'=>'paypay-corp.co.jp', 'lib' =>'Paypay', 'unlogged_access' =>TRUE,
+            'walk_in'=>TRUE, 'email_customize' => FALSE, 'FAQ' => TRUE,
+            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
+            'redirect'=>TRUE,
+            'request_form'=> TRUE,
+            'ip_restriction'=> FALSE,
+            'language' => 'multi',
+            'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
+            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+            't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
+            'event' => FALSE,
+            'sections' => $sections);
+        break;
     case "mec.yourconcierge.jp":
         $company = array ('id' =>'35000516945','tracking_id' => FALSE, 'domain'=>'@mec.co.jp', 'lib' =>'Mitsubishi Estate', 'unlogged_access' =>TRUE,
             'walk_in'=>TRUE, 'email_customize' => FALSE,'FAQ' => FALSE,
@@ -293,7 +484,40 @@ case "ppe.yourconcierge.jp":
             'event' => FALSE,
             'sections' => $sections);
         break;
+    case "robertwalters.yourconcierge.jp":
+        $sections['faq'] = TRUE;
+        $company = array ('id' =>'35001009865','tracking_id' => FALSE, 'domain'=>'@robertwalters.co.jp', 'lib' =>'RObert Walters', 'unlogged_access' =>TRUE,
+            'walk_in'=>FALSE, 'email_customize' => FALSE, 'FAQ' => TRUE,
+            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/yc_logo_welcome.png',
+            'redirect'=>FALSE,
+            'request_form'=> TRUE,
+            'ip_restriction'=> FALSE,
+            'language' => 'multi',
+            'privacy_doc' => '(YourConcierge)Privacy Policy_2019.05.pdf',
+            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+            't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
+            'event' => FALSE,
+            'sections' => $sections);
+        break;
+    case "ssu.yourconcierge.jp":
+        $company = array ('id' =>'35000516944','tracking_id' => FALSE, 'domain'=>'*', 'lib' =>'Sunny Side Up', 'unlogged_access' =>FALSE,
+            'walk_in'=>FALSE, 'email_customize' => FALSE,'FAQ' => FALSE,
+            'logo'=>'images/yc_logo_nav.png', 'picture'=>'images/SSUportal.jpeg',
+            'redirect'=>TRUE,
+            'request_form'=> TRUE,
+            'ip_restriction'=> FALSE,
+            'language' => 'multi',
+            'privacy_doc' => '2019.2.5_TPO_Handling_Personal_Information.pdf',
+            'privacy_tpo' => '(TPO)Privacy Policy_2019.04.pdf',
+            't&c_doc' => '[YourConcierge]Teams of Service 2020.02 .pdf',
+            'event' => FALSE,
+            'sections' => $sections);
+        break;
+     
 }
+$company['signup_subscription'] = (isset($company['signup_subscription']) ? $company['signup_subscription'] : FALSE);
+$company['event_subscription'] = (isset($company['event_subscription']) ? $company['event_subscription'] : FALSE);
+if (!isset($company['stripe'])){$company['stripe'] = $confStripe;}
 $GLOBALS['company'] = $company;
 
 

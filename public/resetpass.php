@@ -41,7 +41,10 @@ if(isset($user) && $user->isLoggedIn()){
     $Logged=true;
     Redirect::to('index.php');
 }
+$request = "Mail: ".$email." - Key: ".$key." - Key: ".$key." - URL: ".$_SERVER['SERVER_NAME'];
+file_put_contents('log/log_resetpass_'.date("y-n-j").'.log', "\xEF\xBB\xBF".date('y-m-d H:i:s').' - [GET] '. $request.PHP_EOL, FILE_APPEND);
 
+    
 ?>
 
         <!--Home section end-->

@@ -51,7 +51,14 @@ class User {
 		$user_id = $this->_db->lastId();
 		$query = $this->_db->insert("user_permission_matches",['user_id'=>$user_id,'permission_id'=>1]);
 		// return $user_id;
-		$query2 = $this->_db->insert("profiles",['user_id'=>$user_id, 'bio'=>'This is your bio']);
+		//$query2 = $this->_db->insert("profiles",['user_id'=>$user_id, 'bio'=>'This is your bio']);
+		return $user_id;
+	}
+	public function createTmp($fields = array()){
+		if (!$this->_db->insert('users', $fields)) {
+			throw new Exception('There was a problem creating an account.');
+		}else
+		$user_id = $this->_db->lastId();
 		return $user_id;
 	}
 

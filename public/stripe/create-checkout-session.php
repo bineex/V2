@@ -1,36 +1,27 @@
 <?php
 session_start();
 require '../../vendor/autoload.php';
-
 require 'config.php';
-$date_end = strtotime('2020-04-30');
-echo $date_end;
-echo ;
-\Stripe\Stripe::setApiKey($config['stripe_secret_key']);
-$domain_url = $config['domain'];
-// Create new Checkout Session for the order
-// Other optional params include:
-// [billing_address_collection] - to display billing address details on the page
-// [customer] - if you have an existing Stripe Customer ID
-// [payment_intent_data] - lets capture the payment later
-// [customer_email] - lets you prefill the email input in the form
-// For full details see https://stripe.com/docs/api/checkout/sessions/create
+//$stripe_trial = (empty($confStripe['stripe_trial_days']) ? "" : "'trial_end' =>".$confStripe['stripe_trial_days'].",");
 
-// ?session_id={CHECKOUT_SESSION_ID} means the redirect will have the session ID set as a query param
+\Stripe\Stripe::setApiKey($confStripe['stripe_secret_key']);
+
 $checkout_session = \Stripe\Checkout\Session::create([
-	'success_url' => $domain_url . '/signup.php?session_id={CHECKOUT_SESSION_ID}',
-	'cancel_url' => $domain_url . '/signup.php?cancel_id='.$_SESSION['subscription']['fd_id'].'-'.$_SESSION['subscription']['user_id'],
+	'success_url' => $_SESSION['subscription']['success_url'],
+	'cancel_url' => $_SESSION['subscription']['cancel_url'],
 	'payment_method_types' => ['card'],
-        'customer_email' => $_SESSION['subscription']['email'],
-        'client_reference_id' => $_SESSION['subscription']['fd_id'],
-        'mode' => 'subscription',
+    'customer_email' => $_SESSION['subscription']['email'],
+    'client_reference_id' => $_SESSION['subscription']['fd_id'],
+    'mode' => 'subscription',
+    'allow_promotion_codes' => true,
+    'locale' => 'auto',
 	'subscription_data' => [
             'items' => [
                 ['plan' => $_SESSION['subscription']['plan'],]
             ],
-            'default_tax_rates' => [$_SESSION['subscription']['tax']],
-            'billing_cycle_anchor' => $date_end,
+            'default_tax_rates' => [$confStripe['tax']],
+            'trial_from_plan' => true,
         ]
 ]);
-unset($_SESSION['subscription']);
+//unset($_SESSION['subscription']);
 echo json_encode(['sessionId' => $checkout_session['id']]);

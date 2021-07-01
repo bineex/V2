@@ -174,8 +174,7 @@ else {
 		<script src="assets/plugins/datatables/js/dataTables.scroller.min.js"></script>
 		<script src="assets/plugins/datatables/dataTables.bootstrap.js"></script>
 		<script src="assets/plugins/select2/js/select2.full.min.js"></script>
-                <script src="assets/plugins/select2/js/select2.full.min.js"></script>
-                <script type="text/javascript" src="assets/plugins/bootstrap.datepicker/js/bootstrap-datepicker.min.js"></script>
+        <script type="text/javascript" src="assets/plugins/bootstrap.datepicker/js/bootstrap-datepicker.min.js"></script>
 
 		<script>
 

@@ -54,22 +54,22 @@ if(Input::exists('post') && isset($_POST['username'])){
         $uid=$account->fd_id;
         $login_success = TRUE;
         
-        if(isset($company['subscription_id']) && $company['subscription_id']){
+        if(!empty($company['signup_subscription'])){
             
-            $plan = $company['subscription_id'];
-            $subscription_status = getSubscriptionStatus($uid,$plan);
-            /*
-            if ($subscription_status <> 'active'){
-                $error_message .= '<strong>Subscription '.$subscription_status.'</strong>';
-                $user->logout();
-                $login_success = FALSE;
-            }
-             * 
-             */
+                $plan = $company['subscription_id'];
+                $subscription_status = checkSubscriptionStatus($uid,$plan);
+                
+                if(empty($subscription_status)){
+                        $error_message .= '<strong>'.$lang['SIGNIN_FAIL'].'</strong><br>'.$lang['SUBSCRIPTION_STATUS_INVALID'];
+                        $login_success = FALSE;
+                        $user->logout();
+
+                }            
         }
+
         if(isset($company['membership_check']) && $company['membership_check']){
             $membership_status = getMembershipStatus($uid);
-                if ($membership_status == 'Ｘ Inactive'){
+                if ($membership_status == 'Inactive'){
                 $error_message .= '<strong>'.$lang['SIGNIN_FAIL'].'</strong><br>'.$lang['SIGNIN_FAIL_MEMBERSHIP'];
                 $user->logout();
                 $login_success = FALSE;

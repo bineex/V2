@@ -87,7 +87,9 @@ class account {
         $db = DB::getInstance();
         $secure_pass = password_hash($password, PASSWORD_BCRYPT, array('cost' => 12));
         $sql = "update users set password = '$secure_pass' where email='".$email."'";
-        $db->query($sql);
+        $query = $db->query($sql);
+        file_put_contents('log/log_resetpass_'.date("y-n-j").'.log', "\xEF\xBB\xBF".date('y-m-d H:i:s').' - [SQL] '. $sql.PHP_EOL, FILE_APPEND);
+        //file_put_contents('log/log_resetpass_'.date("y-n-j").'.log', "\xEF\xBB\xBF".date('y-m-d H:i:s').' - [SQL] '. $query.PHP_EOL, FILE_APPEND);
         return true;
     }
     

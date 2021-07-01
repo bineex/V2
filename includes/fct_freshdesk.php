@@ -5,8 +5,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+//error_reporting(E_ALL);
+//ini_set('display_errors', 1);
 
 require_once ('class_freshdesk.php');
 require_once ('fct_survey.php');
@@ -122,9 +122,7 @@ function newTicket($contact_id,$fields){
     else{
         $response->alert($lang['STH_WENT_WRONG']);
     }
-    
-    $script="jaxon_cancelFormTicket();jaxon_displayTicketList('$contact_id');";
-    $response->script($script);
+    $response->redirect('index.php');
     return $response;
     
 }
@@ -230,105 +228,34 @@ function newTicket2($contact_id,$fields){
      else {
         $response->alert($lang['STH_WENT_WRONG']);
     }
-    
-    //$script="jaxon_cancelFormTicket();jaxon_displayTicketList('$contact_id');";
-    //$response->script($script);
+
     $response->redirect('index.php');
     return $response;
     
 }
 
-function initPage($contact_id,$ticket_id = 0){
-    
-    $response = new Response();
-    $script="jaxon_displayTicketList('$contact_id','$ticket_id');";
-    $response->script($script);
-    return $response;
-    
-}
-function displayUsers(){
-    $freshUsers= new freshdesk();    
-    $tabUsers = $freshUsers->getUsers('resetpasswordtest@bineex.com');
-    //freshtest@tpo.me
-    $display="<table class='table table-hover'>
-		  <thead>
-			<tr>
-			  <th scope='col'>name</th>
-			  <th scope='col'>email</th>
-			  <th scope='col'>company</th>
-                          <th scope='col'></th>
-			</tr>
-		  </thead>
-		  <tbody>";
-			
-    foreach ($tabUsers as $key=>$values){
-        $name=$values['name'];
-        $email=$values['email'];
-        $company=$values['id'];
-        $id=$values['id'];
-        $img=$values['avatar'];
-        //$company[strval($values['company_id'])]['name'];
-        $display.="<tr>
-                    <th scope='row' onclick='jaxon_displayTicketList(\"".$email."\");return false;'>$name</th>
-                    <td>$email</td>
-                    <td>$company</td>
-                    <td>$id</td>
-                  </tr>
-                <tr>
-                    <td colspan=3><img alt='Mario Moreno' data-test-user='user-avatar' src='https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/35013440182/original/imagesg.jpeg?X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=AKIAJ2JSYZ7O3I4JO6DA%2F20180530%2Fus-east-1%2Fs3%2Faws4_request&amp;X-Amz-Date=20180530T120013Z&amp;X-Amz-Expires=86400&amp;X-Amz-Signature=cadc4b5fa0f23707b7f2b965f58d2446aa23624567c6055eae285996a8818d84&amp;X-Amz-SignedHeaders=Host' class='profilepic__img avatar-block'></td>
-                </tr>
-                <tr>
-                   
-                </tr>";
-        
-    }
-    $display.="</tbody></table>";
-    
-    $response = new Response(); // Instance the response class 
-    $response->assign('contentUsers', 'innerHTML', $display);// Invoke the alert method
-    return $response;          // Return the response to the browser
-
-}
-function displayUser($user_id){
-    $freshUsers= new freshdesk();    
-    $values = $freshUsers->getUser($user_id);
-    $display="<table class='table table-hover'>";
-    
-        $name=$values['name'];
-        $email=$values['email'];
-        $company=$values['id'];
-        $id=$values['id'];
-        $img=$values['avatar']['avatar_url'];
-        $custom="";
-        foreach ($values['custom_fields'] as $key => $val) {
-            $custom .= $key .": " .$val . " - ";
-        }
-        //$gender=$values['custom_fields']['性別(Gender)'];
-        //$company[strval($values['company_id'])]['name'];
-        $display.="<tr>
-                    <td rowspan=5><img alt='$name' data-test-user='user-avatar' src='$img'></td>
-                   </tr>
-                   <tr>
-                    <th scope='row' onclick='jaxon_displayTicketList(\"".$email."\");return false;'>$name</th>
-                   </tr>
-                   <tr>
-                    <td>$email</td>
-                   </tr>
-                   <tr>
-                    <td>$custom</td>
-                   </tr>
-                   <tr>
-                    <td>$id</td>
-                  </tr>";
-        
-    $display.="</table>";
-    
-    $response = new Response(); // Instance the response class 
-    $response->assign('contentUsers', 'innerHTML', $display);
-    return $response;          // Return the response to the browser
-
-}
 function displayTicketList($user,$ticket_id = 0){
+    $response = new Response();
+
+    $freshTickets= new freshdesk();    
+    $ticket_selected = $freshTickets->getTicketDetail($ticket_id);
+
+    if (isset($ticket_selected['requester_id']) && $ticket_selected['requester_id'] == $user){               
+        $script="jaxon_displayTicket(".json_encode($ticket_id).");";
+        $response->script($script);
+    }
+    else {
+        $List = getListSurveyPending();
+        
+        if (count($List) > 0){
+            $script="jaxon_displaySurvey(".json_encode($List,JSON_HEX_APOS).");";
+            $response->script($script); 
+        }
+   }
+    return $response;
+
+}
+function displayTicketList2($user,$ticket_id = 0){
     
     $ticket_selected = FALSE;
     $freshTickets= new freshdesk();    
@@ -410,7 +337,6 @@ function displayTicketList($user,$ticket_id = 0){
     return $response;
 
 }
-
 function getSurveyTempValue($id_ticket){
     
     $rate = -1;

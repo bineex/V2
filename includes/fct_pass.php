@@ -4,7 +4,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-header('Content-Type: application/json');
+
 
 use Jaxon\Jaxon;
 use Jaxon\Response\Response;
@@ -49,14 +49,20 @@ function sendPasswordEmail($mailAddress,$mailBody){
         
         $mail->isHTML(true);
         $mail->Subject = "Your Concierge - ".$lang['PASSWORD_RESET'];
-        $mail->Body = $mailBody;   
+        $mail->Body = $mailBody; 
         
         $mail->send();
         $msg = $lang['PASSWORD_MAIL_SENT'];
+        $log_content = $mailBody;
     }catch (Exception $e) {
         echo "Message could not be sent. Mailer Error: ".$mail->ErrorInfo;
         $msg = $lang['STH_WENT_WRONG'];
+        $log_content = $mail->ErrorInfo;
     }
+
+    $request = "Mail: ".$mailAddress." - Result: ".$log_content;
+    file_put_contents('log/log_resetpass_'.date("y-n-j").'.log', "\xEF\xBB\xBF".date('y-m-d H:i:s').' - [POST] '. $request.PHP_EOL, FILE_APPEND);
+
     return $msg;
 }
 function resetPassword($formInputs){
@@ -92,7 +98,6 @@ function resetPassword($formInputs){
                 <br><br>".$lang['PASSWORD_MAIL_FOOTER'];
 
    $result = sendPasswordEmail($email,$mailBody);
-   $result = "Yeah";
    
     $response->alert($result);
     $response->redirect('login.php');

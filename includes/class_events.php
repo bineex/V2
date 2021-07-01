@@ -22,7 +22,7 @@ class events {
                 left join 
                         (select id_event,min(date_start) as date_start,SUM(s.quantity) as qty_total, SUM(IF(qty_booked is NULL,0,qty_booked)) as qty_booked from event_schedule s left join (select id_event_schedule,SUM(IF(quantity is null,0,quantity)) as qty_booked from event_attendees where deleted_at is null group by id_event_schedule) a on s.id_event_schedule = a.id_event_schedule group by id_event) schedule 
                 on fd_articles.article_id = schedule.id_event
-                where fd_articles.category_id in (35000132685) AND fd_articles.status=2           
+                where fd_articles.category_id in (35000132685,35000138868) AND fd_articles.status=2           
                 order by start_order asc,date_start desc";
         
         //$data = $db->query($sql)->result();

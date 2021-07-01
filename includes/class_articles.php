@@ -62,7 +62,7 @@ class articles {
         $sql="SELECT fd_folders.name,IF(date_start is NULL,0,1) as  start_order,date_start,qty_total,'0' as qty_attd, fd_articles.* FROM fd_articles
             join fd_folders on fd_articles.folder_id = fd_folders.id
             left join (select id_event,min(date_start) as date_start,SUM(quantity) as qty_total from event_schedule group by id_event) schedule on fd_articles.article_id = schedule.id_event
-            where fd_articles.category_id in (35000132685) AND fd_articles.status=2 and language='$codeLang'           
+            where fd_articles.category_id in (35000132685,35000138868) AND fd_articles.status=2 and language='$codeLang'           
             order by start_order,date_start desc";
         
         //$data = $db->query($sql)->result();
@@ -167,6 +167,24 @@ class articles {
         $db->query($sql);
         return $db->results();
     }
+    function getEventsbyDate($idCompany,$codeLang = 'ja-JP'){
+        Global $db;
+
+        $sql="SELECT id_event,id_event_schedule,language,fd_articles.description,fd_articles.description_text,tags,title,fd_articles_img.img_url, date_start,TIME_FORMAT(time_start,'%H:%i') as time_start,TIME_FORMAT(time_end,'%H:%i') as time_end
+            FROM fd_articles
+            join fd_folders on fd_articles.folder_id = fd_folders.id and fd_folders.id <> 35000219541
+            left join fd_folders_companies on fd_folders.id = fd_folders_companies.id_folder
+            left join fd_articles_img on fd_articles.article_id = fd_articles_img.article_id      
+            join event_schedule on fd_articles.article_id = event_schedule.id_event
+            where fd_articles.category_id in (35000132685) and fd_articles.status=2 and fd_articles.language ='$codeLang'
+            and ((fd_folders.visibility in (1,2)) or (fd_folders.visibility = 4 and fd_folders_companies.id_company = $idCompany))
+            and date_start >= date_add(date(now()), interval  -WEEKDAY(date(now())) day)
+            order by date_start asc,time_start,id_event";
+
+        $db->query($sql);
+        return $db->results();
+        //and date_start between date_add(date(now()), interval  -WEEKDAY(date(now())) day) and date_add(date(now()), interval  -WEEKDAY(date(now()))+12 day)
+    }
     function getEvents($idCompany,$codeLang = 'ja-JP'){
         Global $db;
         
@@ -178,7 +196,7 @@ class articles {
         */
         
         $sql="SELECT distinct fd_articles.*,fd_articles_img.img_url, date_start, qty, qty_booked FROM fd_articles
-            join fd_folders on fd_articles.folder_id = fd_folders.id
+            join fd_folders on fd_articles.folder_id = fd_folders.id and fd_folders.id <> 35000219541
             left join fd_folders_companies on fd_folders.id = fd_folders_companies.id_folder
             left join fd_articles_img on fd_articles.article_id = fd_articles_img.article_id      
             join 
@@ -189,6 +207,36 @@ class articles {
 				group by id_event,date_start) booked 
             on fd_articles.article_id = booked.id_event
             where fd_articles.category_id in (35000132685) and fd_articles.status=2 and fd_articles.language='$codeLang'
+            and ((fd_folders.visibility in (1,2)) or (fd_folders.visibility = 4 and fd_folders_companies.id_company=$idCompany))
+            order by article_id desc, date_start asc";
+        
+        //$data = $db->query($sql)->result();
+        $db->query($sql);
+        return $db->results();
+    }
+    function getEventsPayment($idCompany,$codeLang = 'ja-JP'){ 
+        Global $db;
+        
+        /*
+         * fd_articles.status => 1: draft, 2: published
+         * fd_articles.category_id => 35000132685 : Live EVENTS
+         * fd_folders.id = 35000219541 => MyAccount Events(with Payment)
+         * fd_folders.visibility => 1: All Users, 2: Logged In Users, 4: Selected Companies
+         * 35000131126
+        */
+        
+        $sql="SELECT distinct fd_articles.*,fd_articles_img.img_url, date_start, qty, qty_booked FROM fd_articles
+            join fd_folders on fd_articles.folder_id = fd_folders.id and fd_folders.id = 35000219541
+            left join fd_folders_companies on fd_folders.id = fd_folders_companies.id_folder
+            left join fd_articles_img on fd_articles.article_id = fd_articles_img.article_id      
+            join 
+            (select id_event,date_start,SUM(s.quantity) as qty, SUM(IFNULL(qty_booked,0)) as qty_booked
+				from event_schedule s
+				left join (select id_event_schedule, SUM(IFNULL(quantity,0)) as qty_booked from event_attendees where deleted_at is null group by id_event_schedule) a 
+				on s.id_event_schedule = a.id_event_schedule
+				group by id_event,date_start) booked 
+            on fd_articles.article_id = booked.id_event
+            where fd_articles.category_id in (35000132685,35000138868) and fd_articles.status=2 and fd_articles.language='$codeLang'
             and ((fd_folders.visibility in (1,2)) or (fd_folders.visibility = 4 and fd_folders_companies.id_company=$idCompany))
             order by article_id desc, date_start asc";
         
@@ -207,19 +255,20 @@ class articles {
         */
         $sql="";
         
-        $sql="SELECT fd_articles.*,fd_articles_img.img_url,date_start,TIME_FORMAT(time_start,'%H:%i') as time_start,TIME_FORMAT(time_end,'%H:%i') as time_end,id_event_schedule,quantity,quantity_max,qty_booked FROM fd_articles
+        $sql="SELECT fd_articles.*,fd_articles_img.img_url,date_start,TIME_FORMAT(time_start,'%H:%i') as time_start,TIME_FORMAT(time_end,'%H:%i') as time_end,id_event_schedule,quantity,quantity_max,qty_booked,event.amount FROM fd_articles
             join fd_folders on fd_articles.folder_id = fd_folders.id
             left join fd_folders_companies on fd_folders.id = fd_folders_companies.id_folder
-            left join fd_articles_img on fd_articles.article_id = fd_articles_img.article_id            
+            left join fd_articles_img on fd_articles.article_id = fd_articles_img.article_id 
+            left join event on fd_articles.article_id = event.id_event            
             join (select s.id_event_schedule, id_event,date_start,date_end,time_start,time_end,s.quantity,s.quantity_max ,SUM(IF(a.quantity is null,0,a.quantity)) as qty_booked from event_schedule s left join event_attendees a on s.id_event_schedule = a.id_event_schedule and deleted_at is null group by s.id_event_schedule) schedule on fd_articles.article_id = schedule.id_event            
-            where fd_articles.article_id = $idEvent and fd_articles.category_id in (35000132685) and fd_articles.status=2 and fd_articles.language='$codeLang'
+            where fd_articles.article_id = $idEvent and fd_articles.category_id in (35000132685,35000138868) and fd_articles.status=2 and fd_articles.language='$codeLang'
             and ((fd_folders.visibility in (1,2)) or (fd_folders.visibility = 4 and fd_folders_companies.id_company=$idCompany))
             order by date_start,time_start";
         
         //$data = $db->query($sql)->result();
         $db->query($sql);
         return $db->results();
-    }
+    }   
     function getPost($idPost,$idCompany,$codeLang = 'ja-JP'){
         Global $db;
         
